@@ -50,6 +50,7 @@ namespace pepega_bot
                 .AddSingleton<CommandHandlingService>()
                 .AddSingleton<HttpClient>()
                 .AddSingleton<IHamagenModule, HamagenModule>()
+                .AddSingleton<IPaprikaFilterModule, PaprikaFilterModule>()
                 .BuildServiceProvider();
         }
 

@@ -15,6 +15,7 @@ namespace pepega_bot.Services
         private readonly IServiceProvider _services;
         private readonly IConfiguration _config;
         private readonly IHamagenModule _hamagenModule;
+        private readonly IPaprikaFilterModule _paprikaFilterModule;
         private readonly CommandService _commands;
         private readonly DiscordSocketClient _discord;
 
@@ -25,6 +26,7 @@ namespace pepega_bot.Services
             _discord = _services.GetRequiredService<DiscordSocketClient>();
             _commands = _services.GetRequiredService<CommandService>();
             _hamagenModule = _services.GetRequiredService<IHamagenModule>();
+            _paprikaFilterModule = _services.GetRequiredService<IPaprikaFilterModule>();
 
             _discord.MessageReceived += MessageReceivedAsync;
             _discord.ReactionAdded += ReactionAddedAsync;
@@ -45,9 +47,12 @@ namespace pepega_bot.Services
             }
         }
 
-        private static async Task MessageReceivedAsync(SocketMessage message)
+        private async Task MessageReceivedAsync(SocketMessage message)
         {
-            //throw new NotImplementedException();
+            if (message.Author.Id == ulong.Parse(_config["UserIds:Paprika"]))
+            {
+                await _paprikaFilterModule.HandlePaprikaMessage(message);
+            }
         }
     }
 }
