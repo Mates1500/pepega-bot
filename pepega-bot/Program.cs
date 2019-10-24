@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Discord;
@@ -22,16 +23,19 @@ namespace pepega_bot
 
         private async Task MainAsync()
         {
-            var configService = new ConfigurationService(new ConfigurationBuilder().Build());
+            var configService = new ConfigurationService(new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("config.json").Build());
             using (var services = ConfigureServices(configService))
             {
-                var client = services.GetRequiredService<DiscordSocketClient>();
+                _client = services.GetRequiredService<DiscordSocketClient>();
 
-                client.Log += Log;
+                _client.Log += Log;
                 services.GetRequiredService<CommandService>().Log += Log;
 
                 await _client.LoginAsync(TokenType.Bot, configService.Configuration["BotToken"]);
                 await _client.StartAsync();
+
+                await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
 
                 await Task.Delay(-1);
             }
@@ -39,10 +43,9 @@ namespace pepega_bot
 
         private ServiceProvider ConfigureServices(IConfigurationService config)
         {
-            
-
             return new ServiceCollection()
                 .AddSingleton<IConfigurationService>(config)
+                .AddSingleton<DiscordSocketClient>()
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
                 .AddSingleton<HttpClient>()

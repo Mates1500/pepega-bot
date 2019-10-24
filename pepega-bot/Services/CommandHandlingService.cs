@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -23,10 +24,15 @@ namespace pepega_bot.Services
             _config = _services.GetRequiredService<IConfigurationService>().Configuration;
             _discord = _services.GetRequiredService<DiscordSocketClient>();
             _commands = _services.GetRequiredService<CommandService>();
-            _hamagenModule = _services.GetRequiredService<HamagenModule>();
+            _hamagenModule = _services.GetRequiredService<IHamagenModule>();
 
             _discord.MessageReceived += MessageReceivedAsync;
             _discord.ReactionAdded += ReactionAddedAsync;
+        }
+
+        public async Task InitializeAsync()
+        {
+            await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
         }
 
         private async Task ReactionAddedAsync(Cacheable<IUserMessage, ulong> message, ISocketMessageChannel channel, SocketReaction react)
