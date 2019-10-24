@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
@@ -25,12 +26,15 @@ namespace pepega_bot.Module
         {
             var downloadedMessage = await message.GetOrDownloadAsync();
             if (!(downloadedMessage is IUserMessage userMessage)) return;
+            if (!(channel is IGuildChannel)) return;
             if (userMessage.Author.IsBot) return;
             if (react.User.IsSpecified && react.User.Value.IsBot) return;
             if (AlreadyReacted(userMessage)) return;
             var hamagenUserId = _config["UserIds:Hamagen"];
             var calleeId = react.UserId;
-            await channel.SendMessageAsync($"Mayor <@{hamagenUserId}>, one of your town villagers, <@{calleeId}>, requests your help!");
+            var guildId = ((IGuildChannel) channel).GuildId;
+            var messageLink = $"{_config["DiscordBaseUrl"]}/channels/{guildId}/{channel.Id}/{message.Id}";
+            await channel.SendMessageAsync($"Mayor <@{hamagenUserId}>, one of your town villagers, <@{calleeId}>, requests your help!" + Environment.NewLine + $"Villager's letter: {messageLink}");
             await downloadedMessage.AddReactionAsync(_whiteCheckmark);
         }
 
