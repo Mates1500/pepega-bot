@@ -26,6 +26,7 @@ namespace pepega_bot.Module
             var downloadedMessage = await message.GetOrDownloadAsync();
             if (!(downloadedMessage is IUserMessage userMessage)) return;
             if (userMessage.Author.IsBot) return;
+            if (react.User.IsSpecified && react.User.Value.IsBot) return;
             if (AlreadyReacted(userMessage)) return;
             var hamagenUserId = _config["UserIds:Hamagen"];
             var calleeId = react.UserId;
