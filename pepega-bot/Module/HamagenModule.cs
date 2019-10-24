@@ -26,6 +26,7 @@ namespace pepega_bot.Module
         {
             var downloadedMessage = await message.GetOrDownloadAsync();
             if (!(downloadedMessage is IUserMessage userMessage)) return;
+            if ((DateTime.UtcNow - downloadedMessage.CreatedAt.UtcDateTime).Days >= 1) return;
             if (!(channel is IGuildChannel)) return;
             if (userMessage.Author.IsBot) return;
             if (react.User.IsSpecified && react.User.Value.IsBot) return;
