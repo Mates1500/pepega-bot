@@ -46,8 +46,9 @@ namespace pepega_bot
                 if (!(downloadedMessage is IUserMessage userMessage)) return;
                 if (userMessage.Author.IsBot) return;
                 if (AlreadyReacted(userMessage)) return;
-                var userId = react.User.Value.Id;
-                await channel.SendMessageAsync($"Mayor <@{userId}>, there's some trouble in your town that requires your immediate attention!");
+                var hamagenUserId = 336438442286120961;
+                var calleeId = react.UserId;
+                await channel.SendMessageAsync($"Mayor <@{hamagenUserId}>, one of your town villagers, <@{calleeId}>, requests your help!");
                 await downloadedMessage.AddReactionAsync(checkMark);
             }
         }
@@ -62,7 +63,7 @@ namespace pepega_bot
 
         private string GetToken()
         {
-            return "NjM2NjEwNjk3MjkxMzY2NDEy.XbCIAQ.FFA8f7XrzaQPbAty5xgxrDzjW6Q"; // TODO: Replace
+            return "NjM2NjM4ODI2NDE2MTc3MTgw.XbFEtA.Fisc1lzoN5AtIoeAWn4MXpa0CO8"; // TODO: Replace
         }
 
         private Task Log(LogMessage msg)
