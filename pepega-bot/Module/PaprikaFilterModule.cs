@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using pepega_bot.Services;
@@ -11,10 +12,12 @@ namespace pepega_bot.Module
     public class PaprikaFilterModule : IPaprikaFilterModule
     {
         private readonly IConfiguration _config;
-
+        private readonly Emote LinkRageEmote;
         public PaprikaFilterModule(IConfigurationService configService)
         {
             _config = configService.Configuration;
+
+            LinkRageEmote = Emote.Parse(_config["Emotes:LinkRage"]);
         }
 
         public async Task HandlePaprikaMessage(SocketMessage message)
@@ -31,8 +34,8 @@ namespace pepega_bot.Module
                 sb.Append(Environment.NewLine + $"{phrase.OriginalPhrase} -> {phrase.CorrectedPhrase}");
             }
 
-            await message.Channel.SendMessageAsync(sb.ToString());
-
+            if (!(message is IUserMessage)) return;
+            await ((IUserMessage) message).AddReactionAsync(LinkRageEmote);
         }
 
         private RepairedMessage RepairMessage(string content)
