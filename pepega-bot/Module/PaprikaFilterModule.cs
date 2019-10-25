@@ -40,7 +40,7 @@ namespace pepega_bot.Module
 
         private RepairedMessage RepairMessage(string content)
         {
-            var words = content.Split(" ");
+            var words = content.ToLower().Split(" ");
             var repairedMessage = new RepairedMessage();
             foreach (var word in words)
             {
