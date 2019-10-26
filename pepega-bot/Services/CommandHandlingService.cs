@@ -29,6 +29,7 @@ namespace pepega_bot.Services
             _paprikaFilterModule = _services.GetRequiredService<IPaprikaFilterModule>();
 
             _discord.MessageReceived += MessageReceivedAsync;
+            _discord.MessageUpdated += MessageUpdatedAsync;
             _discord.ReactionAdded += ReactionAddedAsync;
         }
 
@@ -52,6 +53,14 @@ namespace pepega_bot.Services
             if (message.Author.Id == ulong.Parse(_config["UserIds:Paprika"]))
             {
                 await _paprikaFilterModule.HandlePaprikaMessage(message);
+            }
+        }
+
+        private async Task MessageUpdatedAsync(Cacheable<IMessage, ulong> originalMessage, SocketMessage newMessage, ISocketMessageChannel channel)
+        {
+            if (newMessage.Author.Id == ulong.Parse(_config["UserIds:Paprika"]))
+            {
+                await _paprikaFilterModule.HandlePaprikaMessage(newMessage);
             }
         }
     }
