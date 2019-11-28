@@ -45,7 +45,7 @@ namespace pepega_bot.Module
             foreach (var word in words)
             {
                 if (word.ToLower().StartsWith("https://")) continue;
-                if (word.ToLower().StartsWith("https://")) continue;
+                if (word.ToLower().StartsWith("http://")) continue;
                 if (word.StartsWith("<:")) continue;
                 if (!word.Contains("g")) continue;
 
