@@ -1,8 +1,8 @@
 {
-  "BotToken": "NjM2NjM4ODI2NDE2MTc3MTgw.XgzSTA.DHUHMDk8EUK7S5ZwVL3eGg8Fw1Y",
+  "BotToken": "NjM2NjM4ODI2NDE2MTc3MTgw.XgzWyg.t3kvAqF9lrt2OhDoLl0j3iTilUM",
   "Emotes": {
-    "CallHamagen": "<:pepega:636620752610787338>",
-    "LinkRage": "<:pepega:636620752610787338>"
+    "CallHamagen": "<:callhamagen:634667554689908776>",
+    "LinkRage": "<:linkrage:587340912817078307>"
   },
   "Emojis": {
     "WhiteCheckmark": "\u2705",
@@ -10,9 +10,9 @@
     "Rabbit2": "\uD83D\uDC07"
   },
   "UserIds": {
-    "Hamagen": 141216371550715904,
-    "Paprika": 141216371550715904,
-    "JaraSoukup": 141216371550715904
+    "Hamagen": 336438442286120961,
+    "Paprika": 578588381060268032,
+    "JaraSoukup": 66260738292854784
   },
   "DiscordBaseUrl": "https://discordapp.com",
   "SqliteDbLocation": "Database/results.db"
