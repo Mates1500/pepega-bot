@@ -5,11 +5,14 @@
     "LinkRage": "<:linkrage:587340912817078307>"
   },
   "Emojis": {
-    "WhiteCheckmark": "\u2705"
+    "WhiteCheckmark": "\u2705",
+    "BlueCheckmark": "\u2611",
+    "Rabbit2": "\uD83D\uDC07"
   },
   "UserIds": {
     "Hamagen": 336438442286120961,
-    "Paprika": 578588381060268032
+    "Paprika": 578588381060268032,
+    "JaraSoukup": 66260738292854784
   },
   "DiscordBaseUrl": "https://discordapp.com"
 }
