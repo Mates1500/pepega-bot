@@ -1,0 +1,44 @@
+﻿using System;
+using Discord;
+using Discord.WebSocket;
+
+namespace pepega_bot.Services
+{
+    public class ReactionAddedEventArgs : EventArgs
+    {
+        public Cacheable<IUserMessage, ulong> Message { get; }
+        public ISocketMessageChannel Channel { get; }
+        public SocketReaction React { get; }
+
+        public ReactionAddedEventArgs(Cacheable<IUserMessage, ulong> message, ISocketMessageChannel channel, SocketReaction react)
+        {
+            Message = message;
+            Channel = channel;
+            React = react;
+        }
+    }
+
+    public class MessageReceivedEventArgs : EventArgs
+    {
+        public SocketMessage Message { get; }
+
+        public MessageReceivedEventArgs(SocketMessage message)
+        {
+            Message = message;
+        }
+    }
+
+    public class MessageUpdatedEventArgs : EventArgs
+    {
+        public Cacheable<IMessage, ulong> Message { get; }
+        public SocketMessage NewMessage { get; }
+        public ISocketMessageChannel Channel { get; }
+
+        public MessageUpdatedEventArgs(Cacheable<IMessage, ulong> message, SocketMessage newMessage, ISocketMessageChannel channel)
+        {
+            Message = message;
+            NewMessage = newMessage;
+            Channel = channel;
+        }
+    }
+}

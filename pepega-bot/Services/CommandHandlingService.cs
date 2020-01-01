@@ -4,64 +4,55 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using pepega_bot.Module;
 
 namespace pepega_bot.Services
 {
     internal class CommandHandlingService
     {
         private readonly IServiceProvider _services;
-        private readonly IConfiguration _config;
-        private readonly IHamagenModule _hamagenModule;
-        private readonly IPaprikaFilterModule _paprikaFilterModule;
         private readonly CommandService _commands;
-        private readonly DiscordSocketClient _discord;
 
-        public CommandHandlingService(IServiceProvider services)
+        public event EventHandler<MessageReceivedEventArgs> MessageReceived;
+        public event EventHandler<MessageUpdatedEventArgs> MessageUpdated;
+        public event EventHandler<ReactionAddedEventArgs> ReactAdded;
+
+        public CommandHandlingService(IServiceProvider services, CommandService commandService, DiscordSocketClient discordSocketClient)
         {
             _services = services;
-            _config = _services.GetRequiredService<IConfigurationService>().Configuration;
-            _discord = _services.GetRequiredService<DiscordSocketClient>();
-            _commands = _services.GetRequiredService<CommandService>();
-            _hamagenModule = _services.GetRequiredService<IHamagenModule>();
-            _paprikaFilterModule = _services.GetRequiredService<IPaprikaFilterModule>();
+            _commands = commandService;
 
-            _discord.MessageReceived += MessageReceivedAsync;
-            _discord.MessageUpdated += MessageUpdatedAsync;
-            _discord.ReactionAdded += ReactionAddedAsync;
+            discordSocketClient.MessageReceived += MessageReceivedAsync;
+            discordSocketClient.MessageUpdated += MessageUpdatedAsync;
+            discordSocketClient.ReactionAdded += ReactionAddedAsync;
+        }
+
+        private Task ReactionAddedAsync(Cacheable<IUserMessage, ulong> message, ISocketMessageChannel channel, SocketReaction reaction)
+        {
+            var tempCopy = ReactAdded;
+            var args = new ReactionAddedEventArgs(message, channel, reaction);
+            tempCopy?.Invoke(this, args);
+            return Task.CompletedTask;
+        }
+
+        private Task MessageUpdatedAsync(Cacheable<IMessage, ulong> oldMessage, SocketMessage newMessage, ISocketMessageChannel channel)
+        {
+            var tempCopy = MessageUpdated;
+            var args = new MessageUpdatedEventArgs(oldMessage, newMessage, channel);
+            tempCopy?.Invoke(this, args);
+            return Task.CompletedTask;
+        }
+
+        private Task MessageReceivedAsync(SocketMessage message)
+        {
+            var tempCopy = MessageReceived;
+            var args = new MessageReceivedEventArgs(message);
+            tempCopy?.Invoke(this, args);
+            return Task.CompletedTask;
         }
 
         public async Task InitializeAsync()
         {
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
-        }
-
-        private async Task ReactionAddedAsync(Cacheable<IUserMessage, ulong> message, ISocketMessageChannel channel, SocketReaction react)
-        {
-            Emote.TryParse(_config["Emotes:CallHamagen"], out var hamagenEmote);
-            
-            if (react.Emote.Equals(hamagenEmote))
-            {
-                await _hamagenModule.HandleHamagenEmoteReact(message, channel, react);
-            }
-        }
-
-        private async Task MessageReceivedAsync(SocketMessage message)
-        {
-            if (message.Author.Id == ulong.Parse(_config["UserIds:Paprika"]))
-            {
-                await _paprikaFilterModule.HandlePaprikaMessage(message);
-            }
-        }
-
-        private async Task MessageUpdatedAsync(Cacheable<IMessage, ulong> originalMessage, SocketMessage newMessage, ISocketMessageChannel channel)
-        {
-            if (newMessage.Author.Id == ulong.Parse(_config["UserIds:Paprika"]))
-            {
-                await _paprikaFilterModule.HandlePaprikaMessage(newMessage);
-            }
         }
     }
 }

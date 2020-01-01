@@ -9,15 +9,34 @@ using pepega_bot.Services;
 
 namespace pepega_bot.Module
 {
-    public class PaprikaFilterModule : IPaprikaFilterModule
+    internal class PaprikaFilterModule
     {
         private readonly IConfiguration _config;
         private readonly Emote LinkRageEmote;
-        public PaprikaFilterModule(IConfigurationService configService)
+        public PaprikaFilterModule(IConfigurationService configService, CommandHandlingService chService)
         {
             _config = configService.Configuration;
 
+            chService.MessageReceived += MessageReceivedAsync;
+            chService.MessageUpdated += MessageUpdatedAsync;
+
             LinkRageEmote = Emote.Parse(_config["Emotes:LinkRage"]);
+        }
+
+        private async void MessageReceivedAsync(object sender, MessageReceivedEventArgs e)
+        {
+            if (e.Message.Author.Id == ulong.Parse(_config["UserIds:Paprika"]))
+            {
+                await HandlePaprikaMessage(e.Message);
+            }
+        }
+
+        private async void MessageUpdatedAsync(object sender, MessageUpdatedEventArgs e)
+        {
+            if (e.NewMessage.Author.Id == ulong.Parse(_config["UserIds:Paprika"]))
+            {
+                await HandlePaprikaMessage(e.NewMessage);
+            }
         }
 
         public async Task HandlePaprikaMessage(SocketMessage message)
@@ -70,9 +89,9 @@ namespace pepega_bot.Module
 
     internal class PhraseCorrection
     {
-        public string OriginalPhrase { get; set; }
+        public string OriginalPhrase { get; }
 
-        public string CorrectedPhrase { get; set; }
+        public string CorrectedPhrase { get; }
 
         public PhraseCorrection(string originalPhrase, string correctedPhrase)
         {

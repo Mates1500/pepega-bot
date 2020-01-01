@@ -37,6 +37,11 @@ namespace pepega_bot
 
                 await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
 
+                var commandHandlingService = services.GetRequiredService<CommandHandlingService>();
+                var hamagenModule = new HamagenModule(configService, commandHandlingService);
+                var jaraSoukupModule = new JaraSoukupModule(configService, commandHandlingService);
+                var paprikaModule = new PaprikaFilterModule(configService, commandHandlingService);
+
                 await Task.Delay(-1);
             }
         }
@@ -49,8 +54,6 @@ namespace pepega_bot
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
                 .AddSingleton<HttpClient>()
-                .AddSingleton<IHamagenModule, HamagenModule>()
-                .AddSingleton<IPaprikaFilterModule, PaprikaFilterModule>()
                 .BuildServiceProvider();
         }
 
