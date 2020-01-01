@@ -11,10 +11,12 @@ namespace pepega_bot.Module
 {
     internal class PaprikaFilterModule
     {
+        private readonly IDiscordClient _discordClient;
         private readonly IConfiguration _config;
         private readonly Emote LinkRageEmote;
-        public PaprikaFilterModule(IConfigurationService configService, CommandHandlingService chService)
+        public PaprikaFilterModule(IConfigurationService configService, CommandHandlingService chService, IDiscordClient discordClient)
         {
+            _discordClient = discordClient;
             _config = configService.Configuration;
 
             chService.MessageReceived += MessageReceivedAsync;
@@ -43,7 +45,13 @@ namespace pepega_bot.Module
         {
             var repairedMessage = RepairMessage(message.Content);
 
-            if (repairedMessage.Phrases.Count < 1) return;
+            if (!(message is IUserMessage)) return;
+
+            if (repairedMessage.Phrases.Count < 1)
+            {
+                await ((IUserMessage) message).RemoveReactionAsync(LinkRageEmote, _discordClient.CurrentUser);
+                return;
+            }
 
             var sb = new StringBuilder();
             var paprikaId = ulong.Parse(_config["UserIds:Paprika"]);
@@ -53,7 +61,6 @@ namespace pepega_bot.Module
                 sb.Append(Environment.NewLine + $"{phrase.OriginalPhrase} -> {phrase.CorrectedPhrase}");
             }
 
-            if (!(message is IUserMessage)) return;
             await ((IUserMessage) message).AddReactionAsync(LinkRageEmote);
         }
 

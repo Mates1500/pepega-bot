@@ -40,7 +40,7 @@ namespace pepega_bot
                 var commandHandlingService = services.GetRequiredService<CommandHandlingService>();
                 var hamagenModule = new HamagenModule(configService, commandHandlingService);
                 var jaraSoukupModule = new JaraSoukupModule(configService, commandHandlingService);
-                var paprikaModule = new PaprikaFilterModule(configService, commandHandlingService);
+                var paprikaModule = new PaprikaFilterModule(configService, commandHandlingService, _client);
 
                 await Task.Delay(-1);
             }
