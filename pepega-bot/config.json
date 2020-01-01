@@ -14,5 +14,6 @@
     "Paprika": 578588381060268032,
     "JaraSoukup": 66260738292854784
   },
-  "DiscordBaseUrl": "https://discordapp.com"
+  "DiscordBaseUrl": "https://discordapp.com",
+  "SqliteDbLocation": "Database/results.db"
 }

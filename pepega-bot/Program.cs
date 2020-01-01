@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using pepega_bot.Module;
@@ -38,9 +39,11 @@ namespace pepega_bot
                 await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
 
                 var commandHandlingService = services.GetRequiredService<CommandHandlingService>();
+                var databaseService = services.GetRequiredService<DatabaseService>();
                 var hamagenModule = new HamagenModule(configService, commandHandlingService);
                 var jaraSoukupModule = new JaraSoukupModule(configService, commandHandlingService);
                 var paprikaModule = new PaprikaFilterModule(configService, commandHandlingService, _client);
+                var vocabularyModule = new VocabularyModule(databaseService, commandHandlingService);
 
                 await Task.Delay(-1);
             }
@@ -54,6 +57,7 @@ namespace pepega_bot
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
                 .AddSingleton<HttpClient>()
+                .AddSingleton<DatabaseService>()
                 .BuildServiceProvider();
         }
 
