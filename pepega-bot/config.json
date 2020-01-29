@@ -18,6 +18,7 @@
   "SpammerIds": [
     551826283793874976
   ],
+  "TrimVocabularyCharacters":  ",.?!",
   "DiscordBaseUrl": "https://discordapp.com",
   "SqliteDbLocation": "Database/results.db"
 }

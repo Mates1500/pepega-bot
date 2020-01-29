@@ -43,7 +43,7 @@ namespace pepega_bot
                 var hamagenModule = new HamagenModule(configService, commandHandlingService);
                 var jaraSoukupModule = new JaraSoukupModule(configService, commandHandlingService);
                 var paprikaModule = new PaprikaFilterModule(configService, commandHandlingService, _client);
-                var vocabularyModule = new VocabularyModule(databaseService, commandHandlingService);
+                var vocabularyModule = new VocabularyModule(databaseService, configService, commandHandlingService);
 
                 await Task.Delay(-1);
             }
