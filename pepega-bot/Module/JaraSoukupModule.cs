@@ -21,7 +21,7 @@ namespace pepega_bot.Module
             _rabbit2Emoji = new Emoji(_config["Emojis:Rabbit2"]);
             var blueCheckmark = new Emoji(_config["Emojis:BlueCheckmark"]);
 
-            _baseWarnMessageModule = new BaseWarnMessageModule(blueCheckmark);
+            _baseWarnMessageModule = new BaseWarnMessageModule(configService, blueCheckmark);
 
             chService.ReactAdded += ReactionAddedAsync;
         }

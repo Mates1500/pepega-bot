@@ -7,13 +7,17 @@
   "Emojis": {
     "WhiteCheckmark": "\u2705",
     "BlueCheckmark": "\u2611",
-    "Rabbit2": "\uD83D\uDC07"
+    "Rabbit2": "\uD83D\uDC07",
+    "FuckOff": "\uD83D\uDD95"
   },
   "UserIds": {
     "Hamagen": 336438442286120961,
     "Paprika": 578588381060268032,
     "JaraSoukup": 66260738292854784
   },
+  "SpammerIds": [
+    551826283793874976
+  ],
   "DiscordBaseUrl": "https://discordapp.com",
   "SqliteDbLocation": "Database/results.db"
 }

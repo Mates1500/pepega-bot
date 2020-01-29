@@ -21,7 +21,7 @@ namespace pepega_bot.Module
             _hamagenEmote = Emote.Parse(_config["Emotes:CallHamagen"]);
             var whiteCheckmark = new Emoji(_config["Emojis:WhiteCheckmark"]);
 
-            _baseWarnMessageModule = new BaseWarnMessageModule(whiteCheckmark);
+            _baseWarnMessageModule = new BaseWarnMessageModule(configService, whiteCheckmark);
 
             chService.ReactAdded += ReactionAddedAsync;
         }
