@@ -24,8 +24,11 @@ namespace pepega_bot
 
         private async Task MainAsync()
         {
-            var configService = new ConfigurationService(new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("config.json").Build());
+            var configService = new ConfigurationService(
+                new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory())
+                    .AddJsonFile("config.json")
+                    .AddJsonFile("config.secret.json")
+                    .Build());
             using (var services = ConfigureServices(configService))
             {
                 _client = services.GetRequiredService<DiscordSocketClient>();
@@ -33,7 +36,7 @@ namespace pepega_bot
                 _client.Log += Log;
                 services.GetRequiredService<CommandService>().Log += Log;
 
-                await _client.LoginAsync(TokenType.Bot, configService.Configuration["BotToken"]);
+                await _client.LoginAsync(TokenType.Bot, configService.Configuration["BotSecret"]);
                 await _client.StartAsync();
 
                 await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
