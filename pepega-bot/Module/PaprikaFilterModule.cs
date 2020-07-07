@@ -22,7 +22,7 @@ namespace pepega_bot.Module
             chService.MessageReceived += MessageReceivedAsync;
             chService.MessageUpdated += MessageUpdatedAsync;
 
-            LinkRageEmote = Emote.Parse(_config["Emotes:LinkRage"]);
+            LinkRageEmote = Emote.Parse(_config["Emotes:GooseHonkKnife"]);
         }
 
         private async void MessageReceivedAsync(object sender, MessageReceivedEventArgs e)

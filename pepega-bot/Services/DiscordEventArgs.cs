@@ -18,6 +18,20 @@ namespace pepega_bot.Services
         }
     }
 
+    internal class ReactionRemovedEventArgs
+    {
+        public Cacheable<IUserMessage, ulong> Message { get; }
+        public ISocketMessageChannel Channel { get; }
+        public SocketReaction React { get; }
+
+        public ReactionRemovedEventArgs(Cacheable<IUserMessage, ulong> message, ISocketMessageChannel channel, SocketReaction react)
+        {
+            Message = message;
+            Channel = channel;
+            React = react;
+        }
+    }
+
     public class MessageReceivedEventArgs : EventArgs
     {
         public SocketMessage Message { get; }
@@ -38,6 +52,18 @@ namespace pepega_bot.Services
         {
             Message = message;
             NewMessage = newMessage;
+            Channel = channel;
+        }
+    }
+
+    internal class MessageRemovedEventArgs
+    {
+        public Cacheable<IMessage, ulong> Message { get; }
+        public ISocketMessageChannel Channel { get; }
+
+        public MessageRemovedEventArgs(Cacheable<IMessage, ulong> message, ISocketMessageChannel channel)
+        {
+            Message = message;
             Channel = channel;
         }
     }

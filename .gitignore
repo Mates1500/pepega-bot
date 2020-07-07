@@ -341,3 +341,6 @@ healthchecksdb
 
 # Discord bot secret
 config.secret.json
+
+# result db
+results.db

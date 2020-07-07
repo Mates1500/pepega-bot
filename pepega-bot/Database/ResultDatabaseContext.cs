@@ -36,6 +36,7 @@ namespace pepega_bot.Module
         }
 
         public DbSet<DbWordEntry> WordEntries { get; set; }
+        public DbSet<RingFitReact> RingFitReacts { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder builder)
         {

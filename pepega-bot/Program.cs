@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -43,10 +44,14 @@ namespace pepega_bot
 
                 var commandHandlingService = services.GetRequiredService<CommandHandlingService>();
                 var databaseService = services.GetRequiredService<DatabaseService>();
+
+                Thread.Sleep(TimeSpan.FromSeconds(5)); // ugly hack - wait for Guild Data to load up
+
                 var hamagenModule = new HamagenModule(configService, commandHandlingService);
                 var jaraSoukupModule = new JaraSoukupModule(configService, commandHandlingService);
                 var paprikaModule = new PaprikaFilterModule(configService, commandHandlingService, _client);
                 var vocabularyModule = new VocabularyModule(databaseService, configService, commandHandlingService);
+                var ringFitModule = new RingFitModule(databaseService, configService.Configuration, commandHandlingService, _client);
 
                 await Task.Delay(-1);
             }
