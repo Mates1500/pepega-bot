@@ -25,7 +25,7 @@ namespace pepega_bot.Module
         private readonly List<string> _trackedReacts;
         private readonly ulong[] _allowedAuthorIds;
         private readonly ulong _ringFitChannelId;
-        private readonly ISocketMessageChannel _ringFitChannel; // TODO: find out how to init
+        private readonly ISocketMessageChannel _ringFitChannel;
 
         public RingFitModule(DatabaseService dbService, IConfiguration config, CommandHandlingService chService, DiscordSocketClient dsc)
         {
