@@ -7,7 +7,6 @@
     "MarioYay": "<:marioyay:633698049155268668>",
     "SonicDab": "<:sonic_dab:587345560109842454>",
     "Samus": "<:MadSamusSmash:587354988402180099>"
-    //"Samus": "<:pepega:636620752610787338>"
   },
   "Emojis": {
     "WhiteCheckmark": "\u2705",
@@ -25,13 +24,15 @@
   ],
   "RingFit": {
     "GuildId": 445957055023546370,
-    //"GuildId": 636620229094539274,
     "ChannelId": 707612866538242059,
-    //"ChannelId": "636620229094539276",
     "ApprovedAuthorIds": [
       238680818166267905,
       141216371550715904
-    ]
+    ],
+    "Schedule": {
+      "DailyChallengePost": "18:20",
+      "SundayWeeklyStatsList": "21:00" 
+    } 
   },
   "TrimVocabularyCharacters":  ",.?!",
   "DiscordBaseUrl": "https://discordapp.com",

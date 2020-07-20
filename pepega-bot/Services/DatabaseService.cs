@@ -67,8 +67,8 @@ namespace pepega_bot.Module
             else
                 goBackDays = 6;
 
-            var weekStart = dt.AddDays(-goBackDays);
-            var followingWeekStart = weekStart.AddDays(7);
+            var weekStart = dt.AddDays(-goBackDays).Date;
+            var followingWeekStart = weekStart.AddDays(7).Date;
 
             return _dbContext.RingFitReacts.Where(x =>
                 x.MessageTime >= weekStart && x.MessageTime < followingWeekStart);

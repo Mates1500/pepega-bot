@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using pepega_bot.Module;
 using pepega_bot.Services;
+using Quartz.Impl;
 
 namespace pepega_bot
 {
@@ -37,6 +37,10 @@ namespace pepega_bot
             {
                 _client = services.GetRequiredService<DiscordSocketClient>();
 
+                var factory = new StdSchedulerFactory();
+                var scheduler = await factory.GetScheduler();
+                await scheduler.Start();
+
                 _client.Log += Log;
                 services.GetRequiredService<CommandService>().Log += Log;
 
@@ -54,7 +58,8 @@ namespace pepega_bot
                 var jaraSoukupModule = new JaraSoukupModule(configService, commandHandlingService);
                 var paprikaModule = new PaprikaFilterModule(configService, commandHandlingService, _client);
                 var vocabularyModule = new VocabularyModule(databaseService, configService, commandHandlingService);
-                var ringFitModule = new RingFitModule(databaseService, configService.Configuration, commandHandlingService, _client);
+                var ringFitModule = new RingFitModule(databaseService, configService.Configuration,
+                    commandHandlingService, _client, scheduler);
 
                 await Task.Delay(-1);
             }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -7,6 +8,8 @@ using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using pepega_bot.Services;
+using Quartz;
+using Quartz.Spi;
 
 namespace pepega_bot.Module
 {
@@ -14,6 +17,7 @@ namespace pepega_bot.Module
     {
         private readonly DatabaseService _dbService;
         private readonly IConfiguration _config;
+        private readonly IScheduler _scheduler;
 
         private readonly string _linkPepeHypeCode;
         private readonly string _marioYayCode;
@@ -27,10 +31,73 @@ namespace pepega_bot.Module
         private readonly ulong _ringFitChannelId;
         private readonly ISocketMessageChannel _ringFitChannel;
 
-        public RingFitModule(DatabaseService dbService, IConfiguration config, CommandHandlingService chService, DiscordSocketClient dsc)
+        private const string DailyMessageHeader = "RING FIT DAILY CHALLENGE";
+
+        private class WeeklySummaryJob: IJob
+        {
+            private readonly RingFitModule _rfm;
+
+            public WeeklySummaryJob(RingFitModule rfm)
+            {
+                _rfm = rfm;
+            }
+
+            public async Task Execute(IJobExecutionContext context)
+            {
+                await _rfm.PostWeeklyStats();
+            }
+        }
+
+        private class DailyPostJob : IJob
+        {
+            private readonly RingFitModule _rfm;
+
+            public DailyPostJob(RingFitModule rfm)
+            {
+                _rfm = rfm;
+            }
+
+            public async Task Execute(IJobExecutionContext context)
+            {
+                await _rfm.PostDailyMessage();
+            }
+        }
+
+        private class RfmJobFactory : IJobFactory
+        {
+            private readonly RingFitModule _rfm;
+
+            public RfmJobFactory(RingFitModule rfm)
+            {
+                _rfm = rfm;
+            }
+
+            public IJob NewJob(TriggerFiredBundle bundle, IScheduler scheduler)
+            {
+                var jobDetail = bundle.JobDetail;
+
+                // I know how haram and un-OOP-like this is, now fight me
+
+                if(jobDetail.JobType == typeof(DailyPostJob))
+                    return new DailyPostJob(_rfm);
+
+                if(jobDetail.JobType == typeof(WeeklySummaryJob))
+                    return new WeeklySummaryJob(_rfm);
+
+                throw new NotImplementedException();
+            }
+
+            public void ReturnJob(IJob job)
+            {
+
+            }
+        }
+
+        public RingFitModule(DatabaseService dbService, IConfiguration config, CommandHandlingService chService, DiscordSocketClient dsc, IScheduler scheduler)
         {
             _dbService = dbService;
             _config = config;
+            _scheduler = scheduler;
 
             _linkPepeHypeCode = _config["Emotes:LinkPepeHype"];
             _marioYayCode = _config["Emotes:MarioYay"];
@@ -50,6 +117,47 @@ namespace pepega_bot.Module
             chService.ReactRemoved += OnReactRemoved;
             chService.MessageRemoved += OnMessageRemoved;
             chService.MessageReceived += OnMessageReceived;
+
+            ScheduleJobs();
+        }
+
+        private async void ScheduleJobs()
+        {
+            _scheduler.JobFactory = new RfmJobFactory(this);
+
+            var weeklyJob = JobBuilder.Create<WeeklySummaryJob>()
+                .WithIdentity("weeklyJob", "weeklyGroup")
+                .Build();
+
+            // TODO: Clean this shit up, function is getting too long
+            var weeklyTriggerVals = _config["RingFit:Schedule:SundayWeeklyStatsList"].Split(':')
+                .Select(x => Convert.ToUInt16(x)).ToList();
+            var weeklyHour = weeklyTriggerVals[0];
+            var weeklyMinute = weeklyTriggerVals[1];
+
+            var weeklyTrigger = TriggerBuilder.Create()
+                .WithIdentity("weeklyTrigger", "weeklyGroup")
+                .StartNow()
+                .WithSchedule(CronScheduleBuilder.WeeklyOnDayAndHourAndMinute(DayOfWeek.Sunday, weeklyHour, weeklyMinute))
+                .Build();
+
+            var dailyJob = JobBuilder.Create<DailyPostJob>()
+                .WithIdentity("dailyJob", "dailyGroup")
+                .Build();
+
+            var dailyTriggerVals = _config["RingFit:Schedule:DailyChallengePost"].Split(':')
+                .Select(x => Convert.ToUInt16(x)).ToList();
+            var dailyHour = dailyTriggerVals[0];
+            var dailyMinute = dailyTriggerVals[1];
+
+            var dailyTrigger = TriggerBuilder.Create()
+                .WithIdentity("dailyTrigger", "dailyGroup")
+                .StartNow()
+                .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(dailyHour, dailyMinute))
+                .Build();
+
+            await _scheduler.ScheduleJob(weeklyJob, weeklyTrigger);
+            await _scheduler.ScheduleJob(dailyJob, dailyTrigger);
         }
 
         private Dictionary<string, int> MapMinuteScores()
@@ -64,18 +172,26 @@ namespace pepega_bot.Module
             };
         }
 
-        private bool ShouldBeSkipped(ISocketMessageChannel channel, IUserMessage message)
+        private bool IsDailyBotMessage(ISocketMessageChannel channel, IUserMessage message)
         {
             if (channel.Id != _ringFitChannelId)
-                return true;
+                return false;
+
+            if (!message.Author.IsBot)
+                return false;
+
+            return message.Content.StartsWith(DailyMessageHeader);
+        }
+
+        private bool IsApprovedAuthorMessage(ISocketMessageChannel channel, IUserMessage message)
+        {
+            if (channel.Id != _ringFitChannelId)
+                return false;
 
             if (message.Author.IsBot)
-                return true;
+                return false;
 
-            if (!_allowedAuthorIds.Contains(message.Author.Id))
-                return true;
-
-            return false;
+            return _allowedAuthorIds.Contains(message.Author.Id);
         }
 
         private string EmoteToStringCode(Emote e)
@@ -85,7 +201,7 @@ namespace pepega_bot.Module
 
         private async void OnReactAdded(object sender, ReactionAddedEventArgs e)
         {
-            if (ShouldBeSkipped(e.Channel, await e.Message.GetOrDownloadAsync()))
+            if (!IsDailyBotMessage(e.Channel, await e.Message.GetOrDownloadAsync()))
                 return;
 
             if (!(e.React.Emote is Emote emote))
@@ -109,7 +225,7 @@ namespace pepega_bot.Module
 
         private async void OnReactRemoved(object sender, ReactionRemovedEventArgs e)
         {
-            if (ShouldBeSkipped(e.Channel, await e.Message.GetOrDownloadAsync()))
+            if (!IsDailyBotMessage(e.Channel, await e.Message.GetOrDownloadAsync()))
                 return;
 
             await _dbService.RemoveRingFitReact(e.React.UserId, e.React.MessageId);
@@ -119,7 +235,7 @@ namespace pepega_bot.Module
         {
             return; // TODO: resolve - can't download a removed message if not cached previously...
 
-            if (ShouldBeSkipped(e.Channel, await e.Message.GetOrDownloadAsync() as IUserMessage))
+            if (!IsApprovedAuthorMessage(e.Channel, await e.Message.GetOrDownloadAsync() as IUserMessage))
                 return;
 
             var message = await e.Message.GetOrDownloadAsync();
@@ -129,11 +245,31 @@ namespace pepega_bot.Module
 
         private async void OnMessageReceived(object sender, MessageReceivedEventArgs e)
         {
-            if (ShouldBeSkipped(e.Message.Channel, e.Message as IUserMessage))
+            if (!IsApprovedAuthorMessage(e.Message.Channel, e.Message as IUserMessage))
                 return;
 
             if (e.Message.Content.ToUpper() == "!WEEKLYSTATS")
                 await PostWeeklyStats();
+        }
+
+        private async Task PostDailyMessage()
+        {
+            string MESSAGE_DEFAULT =
+                "Cvičili jste dnes: " + Environment.NewLine +
+                $"5-15 min {_linkPepeHypeCode}" + Environment.NewLine +
+                $"15-30 min {_marioYayCode}" + Environment.NewLine +
+                $"30-45 min {_sonicDabCode}" + Environment.NewLine +
+                $"45-60 min {_samusCode}" + Environment.NewLine +
+                $"60+ min {_linkRageCode}?";
+
+
+            var msgSb = new StringBuilder();
+            msgSb.Append($"{DailyMessageHeader} " + DateTime.Now.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture) +
+                         Environment.NewLine);
+            msgSb.Append(MESSAGE_DEFAULT);
+
+            var result = msgSb.ToString();
+            await _ringFitChannel.SendMessageAsync(result);
         }
 
         private async Task PostWeeklyStats()
