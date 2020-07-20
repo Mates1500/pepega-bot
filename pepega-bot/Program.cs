@@ -29,6 +29,9 @@ namespace pepega_bot
                 new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory())
                     .AddJsonFile("config.json")
                     .AddJsonFile("config.secret.json")
+#if DEBUG
+                    .AddJsonFile("config.dev.json")
+#endif
                     .Build());
             using (var services = ConfigureServices(configService))
             {
