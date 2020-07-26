@@ -291,7 +291,7 @@ namespace pepega_bot.Module
                 summedResults.Add(group.Key, score);
             }
 
-            var sortedResults = summedResults.OrderBy(x => x.Value).ToList();
+            var sortedResults = summedResults.OrderByDescending(x => x.Value).ToList();
 
 
             var sb = new StringBuilder();
