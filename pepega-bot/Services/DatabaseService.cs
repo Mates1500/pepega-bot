@@ -38,10 +38,13 @@ namespace pepega_bot.Module
             await _dbContext.SaveChangesAsync();
         }
 
-        public async Task RemoveRingFitReact(ulong reactUserId, ulong reactedMessageId)
+        public async Task RemoveRingFitReact(ulong reactUserId, string emote, ulong reactedMessageId)
         {
             var results =
-                _dbContext.RingFitReacts.Where(x => x.MessageId == reactedMessageId && x.UserId == reactUserId).ToList();
+                _dbContext.RingFitReacts.Where(x => x.MessageId == reactedMessageId && 
+                                                    x.EmoteId == emote && 
+                                                    x.UserId == reactUserId)
+                    .ToList();
 
             if (results.Count == 0)
                 return;

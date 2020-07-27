@@ -228,7 +228,7 @@ namespace pepega_bot.Module
             if (!IsDailyBotMessage(e.Channel, await e.Message.GetOrDownloadAsync()))
                 return;
 
-            await _dbService.RemoveRingFitReact(e.React.UserId, e.React.MessageId);
+            await _dbService.RemoveRingFitReact(e.React.UserId, e.React.Emote.ToString(), e.React.MessageId);
         }
 
         private async void OnMessageRemoved(object sender, MessageRemovedEventArgs e)
