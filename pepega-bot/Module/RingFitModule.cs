@@ -172,6 +172,14 @@ namespace pepega_bot.Module
             };
         }
 
+        private bool IsValidReactee(SocketReaction r)
+        {
+            if(r.User.Value != null) // this bot itself should be always cached
+                if (r.User.Value.IsBot)
+                    return false;
+            return true;
+        }
+
         private bool IsDailyBotMessage(ISocketMessageChannel channel, IUserMessage message)
         {
             if (channel.Id != _ringFitChannelId)
@@ -201,6 +209,9 @@ namespace pepega_bot.Module
 
         private async void OnReactAdded(object sender, ReactionAddedEventArgs e)
         {
+            if (!IsValidReactee(e.React))
+                return;
+
             if (!IsDailyBotMessage(e.Channel, await e.Message.GetOrDownloadAsync()))
                 return;
 
@@ -269,7 +280,12 @@ namespace pepega_bot.Module
             msgSb.Append(MESSAGE_DEFAULT);
 
             var result = msgSb.ToString();
-            await _ringFitChannel.SendMessageAsync(result);
+            
+            var sentMessage = await _ringFitChannel.SendMessageAsync(result);
+            foreach (var emote in MapMinuteScores().Select(e => Emote.Parse(e.Key)))
+            {
+                await sentMessage.AddReactionAsync(emote);
+            }
         }
 
         private async Task PostWeeklyStats()
