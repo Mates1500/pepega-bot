@@ -8,24 +8,44 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using NLog;
+using NLog.Extensions.Logging;
 using pepega_bot.Module;
 using pepega_bot.Services;
 using Quartz.Impl;
 
 namespace pepega_bot
 {
-    class Program
+    static class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
-            new Program().MainAsync().GetAwaiter().GetResult();
+            using (var dp = new DiscordProgram())
+            {
+                try
+                {
+                    dp.MainAsync().GetAwaiter().GetResult();
+                }
+                catch (Exception ex)
+                {
+                    dp.Logger.Error(ex);
+                    throw;
+                }
+            }
         }
+    }
 
-        private DiscordSocketClient _client;
+    public class DiscordProgram: IDisposable
+    {
+        private readonly ConfigurationService _configService;
+        private readonly ServiceProvider _services;
+        private readonly DiscordSocketClient _client;
+        public readonly NLog.ILogger Logger;
 
-        private async Task MainAsync()
+        private static ConfigurationService BuildConfigurationService()
         {
-            var configService = new ConfigurationService(
+            return new ConfigurationService(
                 new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory())
                     .AddJsonFile("config.json")
                     .AddJsonFile("config.secret.json")
@@ -33,54 +53,74 @@ namespace pepega_bot
                     .AddJsonFile("config.dev.json")
 #endif
                     .Build());
-            using (var services = ConfigureServices(configService))
-            {
-                _client = services.GetRequiredService<DiscordSocketClient>();
-
-                var factory = new StdSchedulerFactory();
-                var scheduler = await factory.GetScheduler();
-                await scheduler.Start();
-
-                _client.Log += Log;
-                services.GetRequiredService<CommandService>().Log += Log;
-
-                await _client.LoginAsync(TokenType.Bot, configService.Configuration["BotSecret"]);
-                await _client.StartAsync();
-
-                await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
-
-                var commandHandlingService = services.GetRequiredService<CommandHandlingService>();
-                var databaseService = services.GetRequiredService<DatabaseService>();
-
-                Thread.Sleep(TimeSpan.FromSeconds(5)); // ugly hack - wait for Guild Data to load up
-
-                var hamagenModule = new HamagenModule(configService, commandHandlingService);
-                var jaraSoukupModule = new JaraSoukupModule(configService, commandHandlingService);
-                var paprikaModule = new PaprikaFilterModule(configService, commandHandlingService, _client);
-                var vocabularyModule = new VocabularyModule(databaseService, configService, commandHandlingService);
-                var ringFitModule = new RingFitModule(databaseService, configService.Configuration,
-                    commandHandlingService, _client, scheduler);
-
-                await Task.Delay(-1);
-            }
         }
 
-        private ServiceProvider ConfigureServices(IConfigurationService config)
+        private static ServiceProvider BuildServiceProvider(IConfigurationService cs)
         {
             return new ServiceCollection()
-                .AddSingleton<IConfigurationService>(config)
+                .AddSingleton<IConfigurationService>(cs)
                 .AddSingleton<DiscordSocketClient>()
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
                 .AddSingleton<HttpClient>()
                 .AddSingleton<DatabaseService>()
+                .AddLogging(loggingBuilder =>
+                {
+                    loggingBuilder.ClearProviders();
+                    loggingBuilder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
+                    loggingBuilder.AddNLog(cs.Configuration);
+                })
                 .BuildServiceProvider();
         }
 
-        private static Task Log(LogMessage msg)
+        public DiscordProgram()
         {
-            Console.WriteLine(msg.ToString());
+            _configService = BuildConfigurationService();
+            _services = BuildServiceProvider(_configService);
+            _client = _services.GetRequiredService<DiscordSocketClient>();
+            Logger = LogManager.GetCurrentClassLogger();
+        }
+
+        public async Task MainAsync()
+        {
+            var factory = new StdSchedulerFactory();
+            var scheduler = await factory.GetScheduler();
+            await scheduler.Start();
+
+            _client.Log += Log;
+            _services.GetRequiredService<CommandService>().Log += Log;
+
+            await _client.LoginAsync(TokenType.Bot, _configService.Configuration["BotSecret"]);
+            await _client.StartAsync();
+
+            await _services.GetRequiredService<CommandHandlingService>().InitializeAsync();
+
+            var commandHandlingService = _services.GetRequiredService<CommandHandlingService>();
+            var databaseService = _services.GetRequiredService<DatabaseService>();
+
+            Thread.Sleep(TimeSpan.FromSeconds(5)); // ugly hack - wait for Guild Data to load up
+
+            var hamagenModule = new HamagenModule(_configService, commandHandlingService);
+            var jaraSoukupModule = new JaraSoukupModule(_configService, commandHandlingService);
+            var paprikaModule = new PaprikaFilterModule(_configService, commandHandlingService, _client);
+            var vocabularyModule = new VocabularyModule(databaseService, _configService, commandHandlingService);
+            var ringFitModule = new RingFitModule(databaseService, _configService.Configuration,
+                commandHandlingService, _client, scheduler);
+
+            await Task.Delay(-1);
+        }
+
+
+        private Task Log(LogMessage msg)
+        {
+            Logger.Debug(msg.ToString());
             return Task.CompletedTask;
+        }
+
+        public void Dispose()
+        {
+            _services?.Dispose();
+            _client?.Dispose();
         }
     }
 }
