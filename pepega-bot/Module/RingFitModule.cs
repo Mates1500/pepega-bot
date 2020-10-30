@@ -259,8 +259,15 @@ namespace pepega_bot.Module
             if (!IsApprovedAuthorMessage(e.Message.Channel, e.Message as IUserMessage))
                 return;
 
-            if (e.Message.Content.ToUpper() == "!WEEKLYSTATS")
-                await PostWeeklyStats();
+            switch (e.Message.Content.ToUpper())
+            {
+                case "!WEEKLYSTATS":
+                    await PostWeeklyStats();
+                    break;
+                case "!DAILYMESSAGE":
+                    await PostDailyMessage();
+                    break;
+            }
         }
 
         private async Task PostDailyMessage()
