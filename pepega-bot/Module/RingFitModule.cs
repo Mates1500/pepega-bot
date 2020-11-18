@@ -174,7 +174,7 @@ namespace pepega_bot.Module
 
         private bool IsValidReactee(SocketReaction r)
         {
-            if(r.User.Value != null) // this bot itself should be always cached
+            if (r.User.IsSpecified) // this bot itself should be always cached
                 if (r.User.Value.IsBot)
                     return false;
             return true;
