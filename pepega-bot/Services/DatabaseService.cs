@@ -17,7 +17,7 @@ namespace pepega_bot.Module
 
         public async Task InsertOrAddCountByOne(string wordValue)
         {
-            var currentResult = _dbContext.WordEntries.Where(x => x.Value == wordValue).ToList();
+            var currentResult = _dbContext.WordEntries.AsQueryable().Where(x => x.Value == wordValue).ToList();
             if (currentResult.Count < 1)
             {
                 _dbContext.WordEntries.Add(new DbWordEntry {Value = wordValue, Count = 1});
@@ -41,7 +41,7 @@ namespace pepega_bot.Module
         public async Task RemoveRingFitReact(ulong reactUserId, string emote, ulong reactedMessageId)
         {
             var results =
-                _dbContext.RingFitReacts.Where(x => x.MessageId == reactedMessageId && 
+                _dbContext.RingFitReacts.AsQueryable().Where(x => x.MessageId == reactedMessageId && 
                                                     x.EmoteId == emote && 
                                                     x.UserId == reactUserId)
                     .ToList();
@@ -55,7 +55,7 @@ namespace pepega_bot.Module
 
         public async Task RemoveRingFitReactsFor(ulong messageId)
         {
-            var messagesToRemove = _dbContext.RingFitReacts.Where(x => x.MessageId == messageId);
+            var messagesToRemove = _dbContext.RingFitReacts.AsQueryable().Where(x => x.MessageId == messageId);
 
             _dbContext.RingFitReacts.RemoveRange(messagesToRemove);
 
@@ -73,7 +73,7 @@ namespace pepega_bot.Module
             var weekStart = dt.AddDays(-goBackDays).Date;
             var followingWeekStart = weekStart.AddDays(7).Date;
 
-            return _dbContext.RingFitReacts.Where(x =>
+            return _dbContext.RingFitReacts.AsQueryable().Where(x =>
                 x.MessageTime >= weekStart && x.MessageTime < followingWeekStart);
         }
     }
