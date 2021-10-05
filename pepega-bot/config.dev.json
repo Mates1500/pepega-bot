@@ -1,16 +1,18 @@
 {
   "Emotes": {
     "CallHamagen": "<:call_hamagen:734799808602177561>",
-    "GooseHonkKnife": "<:goose_honk_knife:734799851782537274>",
-    "LinkRage": "<:link_rage:734799898649559061>",
-    "LinkPepeHype": "<:link_pepe_hype:734799935395856476>",
-    "MarioYay": "<:mario_yay:734801064749957160>",
-    "SonicDab": "<:sonic_dab:734801082416627796>",
-    "Samus": "<:pepega:636620752610787338>"
+    "GooseHonkKnife": "<:goose_honk_knife:734799851782537274>"
   },
 
   "RingFit": {
     "GuildId": 636620229094539274,
-    "ChannelId": 636620229094539276
+    "ChannelId": 636620229094539276,
+    "ScoreMapping": [
+      [ "<:link_pepe_hype:734799935395856476>", 5],
+      [ "<:mario_yay:734801064749957160>", 15 ],
+      [ "<:sonic_dab:734801082416627796>", 30 ],
+      [ "<:pepega:636620752610787338>", 45 ],
+      [ "<:link_rage:734799898649559061>", 60 ]
+    ]
   }
 }

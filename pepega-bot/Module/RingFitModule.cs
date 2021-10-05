@@ -19,12 +19,6 @@ namespace pepega_bot.Module
         private readonly IConfiguration _config;
         private readonly IScheduler _scheduler;
 
-        private readonly string _linkPepeHypeCode;
-        private readonly string _marioYayCode;
-        private readonly string _sonicDabCode;
-        private readonly string _samusCode;
-        private readonly string _linkRageCode;
-
         private readonly Dictionary<string, int> _minuteScoresMap;
         private readonly List<string> _trackedReacts;
         private readonly ulong[] _allowedAuthorIds;
@@ -32,6 +26,7 @@ namespace pepega_bot.Module
         private readonly ISocketMessageChannel _ringFitChannel;
 
         private const string DailyMessageHeader = "RING FIT DAILY CHALLENGE";
+        private readonly string _dailyMessageBase;
 
         private class WeeklySummaryJob: IJob
         {
@@ -99,11 +94,6 @@ namespace pepega_bot.Module
             _config = config;
             _scheduler = scheduler;
 
-            _linkPepeHypeCode = _config["Emotes:LinkPepeHype"];
-            _marioYayCode = _config["Emotes:MarioYay"];
-            _sonicDabCode = _config["Emotes:SonicDab"];
-            _samusCode = _config["Emotes:Samus"];
-            _linkRageCode = _config["Emotes:LinkRage"];
 
             _allowedAuthorIds = _config.GetSection("RingFit:ApprovedAuthorIds").Get<ulong[]>();
             _ringFitChannelId = Convert.ToUInt64(_config["RingFit:ChannelId"]);
@@ -112,6 +102,8 @@ namespace pepega_bot.Module
 
             _minuteScoresMap = MapMinuteScores();
             _trackedReacts = _minuteScoresMap.Keys.ToList();
+
+            _dailyMessageBase = ConstructDailyMessageBase();
 
             chService.ReactAdded += OnReactAdded;
             chService.ReactRemoved += OnReactRemoved;
@@ -162,14 +154,52 @@ namespace pepega_bot.Module
 
         private Dictionary<string, int> MapMinuteScores()
         {
-            return new Dictionary<string, int>
+            // mapping expected in form ["EmoteKey", MinuteValue] per item, I couldn't do dict, because colons fucked up hierarchy in key in .NET Core IConfig
+            var dict = new Dictionary<string, int>();
+            foreach (var pair in _config.GetSection("RingFit:ScoreMapping").GetChildren())
             {
-                {_linkPepeHypeCode, 5},
-                {_marioYayCode, 15},
-                {_sonicDabCode, 30},
-                {_samusCode, 45},
-                {_linkRageCode, 60}
-            };
+                var currentPair = pair.Get<string[]>();
+
+                if (currentPair.Length != 2)
+                    throw new FormatException("Score mapping per item is expected in form [\"EmoteKey\", MinuteValue]");
+
+                var emoteKey = currentPair[0];
+                var minuteValue = Convert.ToInt16(currentPair[1]);
+
+                dict.Add(emoteKey, minuteValue);
+            }
+                
+            return dict;
+        }
+
+        private string ConstructDailyMessageBase()
+        {
+            var sb = new StringBuilder();
+            sb.Append("Cvičili jste dnes: " + Environment.NewLine);
+            var keysSortedByVal = _minuteScoresMap.OrderBy(x => x.Value).Select(x => x.Key).ToList();
+            for (var i = 0; i < keysSortedByVal.Count; i++)
+            {
+                var isLastIteration = i == keysSortedByVal.Count - 1;
+                sb.Append(_minuteScoresMap[keysSortedByVal[i]]); // min number of mins
+                if (!isLastIteration)
+                {
+                    sb.Append("-");
+                    sb.Append(_minuteScoresMap[keysSortedByVal[i + 1]]); // max number of mins = min number of mins of next sorted val
+                }
+                else
+                {
+                    sb.Append("+");
+                }
+                sb.Append(" min ");
+                sb.Append(keysSortedByVal[i]); // the actual emote
+                if (!isLastIteration)
+                {
+                    sb.Append(Environment.NewLine);
+                }
+            }
+
+            sb.Append("?");
+            return sb.ToString();
         }
 
         private bool IsValidReactee(SocketReaction r)
@@ -272,19 +302,10 @@ namespace pepega_bot.Module
 
         private async Task PostDailyMessage()
         {
-            string MESSAGE_DEFAULT =
-                "Cvičili jste dnes: " + Environment.NewLine +
-                $"5-15 min {_linkPepeHypeCode}" + Environment.NewLine +
-                $"15-30 min {_marioYayCode}" + Environment.NewLine +
-                $"30-45 min {_sonicDabCode}" + Environment.NewLine +
-                $"45-60 min {_samusCode}" + Environment.NewLine +
-                $"60+ min {_linkRageCode}?";
-
-
             var msgSb = new StringBuilder();
             msgSb.Append($"{DailyMessageHeader} " + DateTime.Now.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture) +
                          Environment.NewLine);
-            msgSb.Append(MESSAGE_DEFAULT);
+            msgSb.Append(_dailyMessageBase);
 
             var result = msgSb.ToString();
             
