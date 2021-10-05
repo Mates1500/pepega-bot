@@ -6,7 +6,7 @@ using pepega_bot.Utils;
 
 namespace pepega_bot.Module
 {
-    internal class JaraSoukupModule
+    internal class JaraSoukupModule: IModule
     {
         private readonly IConfiguration _config;
         private readonly BaseWarnMessageModule _baseWarnMessageModule;

@@ -4,7 +4,7 @@ using pepega_bot.Services;
 
 namespace pepega_bot.Module
 {
-    internal class VocabularyModule
+    internal class VocabularyModule: IModule
     {
         private readonly DatabaseService _dbService;
         private readonly IConfiguration _config;

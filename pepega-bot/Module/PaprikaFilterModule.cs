@@ -9,7 +9,7 @@ using pepega_bot.Services;
 
 namespace pepega_bot.Module
 {
-    internal class PaprikaFilterModule
+    internal class PaprikaFilterModule: IModule
     {
         private readonly IDiscordClient _discordClient;
         private readonly IConfiguration _config;

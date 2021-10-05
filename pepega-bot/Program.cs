@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Threading;
@@ -41,6 +42,7 @@ namespace pepega_bot
         private readonly ConfigurationService _configService;
         private readonly ServiceProvider _services;
         private readonly DiscordSocketClient _client;
+        private readonly List<IModule> _modules;
         public readonly NLog.ILogger Logger;
 
         private static ConfigurationService BuildConfigurationService()
@@ -78,15 +80,12 @@ namespace pepega_bot
             _configService = BuildConfigurationService();
             _services = BuildServiceProvider(_configService);
             _client = _services.GetRequiredService<DiscordSocketClient>();
+            _modules = new List<IModule>();
             Logger = LogManager.GetCurrentClassLogger();
         }
 
         public async Task MainAsync()
         {
-            var factory = new StdSchedulerFactory();
-            var scheduler = await factory.GetScheduler();
-            await scheduler.Start();
-
             _client.Log += Log;
             _services.GetRequiredService<CommandService>().Log += Log;
 
@@ -95,19 +94,33 @@ namespace pepega_bot
 
             await _services.GetRequiredService<CommandHandlingService>().InitializeAsync();
 
+            _client.GuildAvailable += OnGuildDataLoaded;
+
             var commandHandlingService = _services.GetRequiredService<CommandHandlingService>();
             var databaseService = _services.GetRequiredService<DatabaseService>();
 
-            Thread.Sleep(TimeSpan.FromSeconds(5)); // ugly hack - wait for Guild Data to load up
-
-            var hamagenModule = new HamagenModule(_configService, commandHandlingService);
-            var jaraSoukupModule = new JaraSoukupModule(_configService, commandHandlingService);
-            var paprikaModule = new PaprikaFilterModule(_configService, commandHandlingService, _client);
-            var vocabularyModule = new VocabularyModule(databaseService, _configService, commandHandlingService);
-            var ringFitModule = new RingFitModule(databaseService, _configService.Configuration,
-                commandHandlingService, _client, scheduler);
+            _modules.Add(new HamagenModule(_configService, commandHandlingService));
+            _modules.Add(new JaraSoukupModule(_configService, commandHandlingService));
+            _modules.Add(new PaprikaFilterModule(_configService, commandHandlingService, _client));
+            _modules.Add(new VocabularyModule(databaseService, _configService, commandHandlingService));
 
             await Task.Delay(-1);
+        }
+
+        private async Task OnGuildDataLoaded(SocketGuild arg)
+        {
+            if (arg.Id != ulong.Parse(_configService.Configuration["RingFit:GuildId"]))
+                return;
+
+            var factory = new StdSchedulerFactory();
+            var scheduler = await factory.GetScheduler();
+            await scheduler.Start();
+
+            var commandHandlingService = _services.GetRequiredService<CommandHandlingService>();
+            var databaseService = _services.GetRequiredService<DatabaseService>();
+
+            _modules.Add(new RingFitModule(databaseService, _configService.Configuration,
+                commandHandlingService, _client, scheduler));
         }
 
 

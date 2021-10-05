@@ -13,7 +13,7 @@ using Quartz.Spi;
 
 namespace pepega_bot.Module
 {
-    internal class RingFitModule
+    internal class RingFitModule: IModule
     {
         private readonly DatabaseService _dbService;
         private readonly IConfiguration _config;

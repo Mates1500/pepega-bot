@@ -8,7 +8,7 @@ using pepega_bot.Services;
 
 namespace pepega_bot.Module
 {
-    internal class BaseWarnMessageModule
+    internal class BaseWarnMessageModule: IModule
     {
         private readonly Emoji _alreadyReactedEmoji;
         private readonly Emoji _fuckOffEmoji;
