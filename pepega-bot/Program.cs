@@ -121,6 +121,7 @@ namespace pepega_bot
 
             _modules.Add(new RingFitModule(databaseService, _configService.Configuration,
                 commandHandlingService, _client, scheduler));
+            _modules.Add(new TobikExposerModule(_configService, commandHandlingService, scheduler));
         }
 
 

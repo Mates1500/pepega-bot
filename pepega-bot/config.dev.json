@@ -1,14 +1,25 @@
 {
   "Emotes": {
     "CallHamagen": "<:call_hamagen:734799808602177561>",
-    "GooseHonkKnife": "<:goose_honk_knife:734799851782537274>"
+    "GooseHonkKnife": "<:goose_honk_knife:734799851782537274>",
+    "Teletobies": "<:teletobies:904100523026829353>"
   },
-
+  "UserIds": {
+    "Tobik": 141216371550715904
+  },
+  "TobikExposure": {
+    "Channels": [
+      904104428393611334
+    ],
+    "Schedule": {
+      "DailyClean": "22:46"
+    }
+  },
   "RingFit": {
     "GuildId": 636620229094539274,
     "ChannelId": 636620229094539276,
     "ScoreMapping": [
-      [ "<:link_pepe_hype:734799935395856476>", 5],
+      [ "<:link_pepe_hype:734799935395856476>", 5 ],
       [ "<:mario_yay:734801064749957160>", 15 ],
       [ "<:sonic_dab:734801082416627796>", 30 ],
       [ "<:pepega:636620752610787338>", 45 ],
