@@ -12,7 +12,7 @@
       904104428393611334
     ],
     "Schedule": {
-      "DailyClean": "22:46"
+      "DailyClean": "22:18"
     }
   },
   "RingFit": {
@@ -24,6 +24,10 @@
       [ "<:sonic_dab:734801082416627796>", 30 ],
       [ "<:pepega:636620752610787338>", 45 ],
       [ "<:link_rage:734799898649559061>", 60 ]
-    ]
+    ],
+    "Schedule": {
+      "DailyChallengePost": "22:18",
+      "SundayWeeklyStatsList": "21:00"
+    }
   }
 }

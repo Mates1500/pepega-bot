@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.IO;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using NLog;
 using NLog.Extensions.Logging;
 using pepega_bot.Module;
+using pepega_bot.Scheduling;
 using pepega_bot.Services;
 using Quartz.Impl;
 
@@ -44,6 +45,8 @@ namespace pepega_bot
         private readonly DiscordSocketClient _client;
         private readonly List<IModule> _modules;
         public readonly NLog.ILogger Logger;
+
+        private ServiceContainer _jobContainer;
 
         private static ConfigurationService BuildConfigurationService()
         {
@@ -79,6 +82,7 @@ namespace pepega_bot
         {
             _configService = BuildConfigurationService();
             _services = BuildServiceProvider(_configService);
+            _jobContainer = new ServiceContainer();
             _client = _services.GetRequiredService<DiscordSocketClient>();
             _modules = new List<IModule>();
             Logger = LogManager.GetCurrentClassLogger();
@@ -119,9 +123,12 @@ namespace pepega_bot
             var commandHandlingService = _services.GetRequiredService<CommandHandlingService>();
             var databaseService = _services.GetRequiredService<DatabaseService>();
 
+            var jobFactory = new JobFactory(_jobContainer);
+            scheduler.JobFactory = jobFactory;
+
             _modules.Add(new RingFitModule(databaseService, _configService.Configuration,
-                commandHandlingService, _client, scheduler));
-            _modules.Add(new TobikExposerModule(_configService, commandHandlingService, scheduler));
+                commandHandlingService, _client, scheduler, _jobContainer));
+            _modules.Add(new TobikExposerModule(_configService, commandHandlingService, scheduler, _jobContainer));
         }
 
 

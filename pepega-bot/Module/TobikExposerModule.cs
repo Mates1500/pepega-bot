@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Linq;
-using System.Threading.Tasks;
 using Discord;
 using Microsoft.Extensions.Configuration;
 using pepega_bot.Services;
 using Quartz;
-using Quartz.Spi;
 
 namespace pepega_bot.Module
 {
@@ -35,55 +34,18 @@ namespace pepega_bot.Module
         private readonly List<ulong> _allowedChannels;
         private readonly ulong _tobikId;
         private readonly IScheduler _scheduler;
+        private readonly IServiceContainer _jobContainer;
 
         private readonly Emote _teletobiesEmote;
 
         private readonly Dictionary<ulong, CustomMessageContainer> _cachedMessages;
 
-        private class DailyCleanJob : IJob
-        {
-            private readonly TobikExposerModule _tem;
-
-            public DailyCleanJob(TobikExposerModule tem)
-            {
-                _tem = tem;
-            }
-
-            public async Task Execute(IJobExecutionContext context)
-            {
-                _tem.Clean();
-            }
-        }
-
-        private class TemJobFactory : IJobFactory
-        {
-            private readonly TobikExposerModule _tem;
-
-            public TemJobFactory(TobikExposerModule tem)
-            {
-                _tem = tem;
-            }
-
-            public IJob NewJob(TriggerFiredBundle bundle, IScheduler scheduler)
-            {
-                var jobDetail = bundle.JobDetail;
-
-                if (jobDetail.JobType == typeof(DailyCleanJob))
-                    return new DailyCleanJob(_tem);
-
-                throw new NotImplementedException();
-            }
-
-            public void ReturnJob(IJob job)
-            {
-
-            }
-        }
-
-        public TobikExposerModule(IConfigurationService config, CommandHandlingService chService, IScheduler scheduler)
+        public TobikExposerModule(IConfigurationService config, CommandHandlingService chService, IScheduler scheduler,
+            IServiceContainer jobContainer)
         {
             _config = config.Configuration;
             _scheduler = scheduler;
+            _jobContainer = jobContainer;
 
             _cachedMessages = new Dictionary<ulong, CustomMessageContainer>();
 
@@ -95,15 +57,21 @@ namespace pepega_bot.Module
             chService.MessageUpdated += OnMessageUpdated;
             chService.MessageRemoved += OnMessageRemoved;
 
+            AddJobsToContainer();
             ScheduleJobs();
+        }
+
+        private void AddJobsToContainer()
+        {
+            var dailyJob = new DailyCleanJob(this);
+
+            _jobContainer.AddService(typeof(DailyCleanJob), dailyJob);
         }
 
         private async void ScheduleJobs()
         {
-            _scheduler.JobFactory = new TemJobFactory(this);
-
             var dailyJob = JobBuilder.Create<DailyCleanJob>()
-                .WithIdentity("dailyCleanJob", "dailyGroup")
+                .WithIdentity("dailyCleanJob", "dailyCleanGroup")
                 .Build();
 
             var dailyTriggerVals = _config["TobikExposure:Schedule:DailyClean"].Split(':')
@@ -119,7 +87,7 @@ namespace pepega_bot.Module
             await _scheduler.ScheduleJob(dailyJob, dailyTrigger);
         }
 
-        private void Clean()
+        public void Clean()
         {
             var messagesOlderThanWeek =
                 _cachedMessages.Where(x => (DateTime.Now - x.Value.TimeAcquired) > TimeSpan.FromDays(7));

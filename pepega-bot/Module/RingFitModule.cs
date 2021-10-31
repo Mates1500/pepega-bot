@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -9,7 +10,6 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using pepega_bot.Services;
 using Quartz;
-using Quartz.Spi;
 
 namespace pepega_bot.Module
 {
@@ -18,6 +18,7 @@ namespace pepega_bot.Module
         private readonly DatabaseService _dbService;
         private readonly IConfiguration _config;
         private readonly IScheduler _scheduler;
+        private readonly IServiceContainer _jobContainer;
 
         private readonly Dictionary<string, int> _minuteScoresMap;
         private readonly List<string> _trackedReacts;
@@ -28,71 +29,13 @@ namespace pepega_bot.Module
         private const string DailyMessageHeader = "RING FIT DAILY CHALLENGE";
         private readonly string _dailyMessageBase;
 
-        private class WeeklySummaryJob: IJob
-        {
-            private readonly RingFitModule _rfm;
-
-            public WeeklySummaryJob(RingFitModule rfm)
-            {
-                _rfm = rfm;
-            }
-
-            public async Task Execute(IJobExecutionContext context)
-            {
-                await _rfm.PostWeeklyStats();
-            }
-        }
-
-        private class DailyPostJob : IJob
-        {
-            private readonly RingFitModule _rfm;
-
-            public DailyPostJob(RingFitModule rfm)
-            {
-                _rfm = rfm;
-            }
-
-            public async Task Execute(IJobExecutionContext context)
-            {
-                await _rfm.PostDailyMessage();
-            }
-        }
-
-        private class RfmJobFactory : IJobFactory
-        {
-            private readonly RingFitModule _rfm;
-
-            public RfmJobFactory(RingFitModule rfm)
-            {
-                _rfm = rfm;
-            }
-
-            public IJob NewJob(TriggerFiredBundle bundle, IScheduler scheduler)
-            {
-                var jobDetail = bundle.JobDetail;
-
-                // I know how haram and un-OOP-like this is, now fight me
-
-                if(jobDetail.JobType == typeof(DailyPostJob))
-                    return new DailyPostJob(_rfm);
-
-                if(jobDetail.JobType == typeof(WeeklySummaryJob))
-                    return new WeeklySummaryJob(_rfm);
-
-                throw new NotImplementedException();
-            }
-
-            public void ReturnJob(IJob job)
-            {
-
-            }
-        }
-
-        public RingFitModule(DatabaseService dbService, IConfiguration config, CommandHandlingService chService, DiscordSocketClient dsc, IScheduler scheduler)
+        public RingFitModule(DatabaseService dbService, IConfiguration config, CommandHandlingService chService,
+            DiscordSocketClient dsc, IScheduler scheduler, IServiceContainer jobContainer)
         {
             _dbService = dbService;
             _config = config;
             _scheduler = scheduler;
+            _jobContainer = jobContainer;
 
 
             _allowedAuthorIds = _config.GetSection("RingFit:ApprovedAuthorIds").Get<ulong[]>();
@@ -110,13 +53,21 @@ namespace pepega_bot.Module
             chService.MessageRemoved += OnMessageRemoved;
             chService.MessageReceived += OnMessageReceived;
 
+            AddJobsToContainer();
             ScheduleJobs();
+        }
+
+        private void AddJobsToContainer()
+        {
+            var dailyJob = new DailyPostJob(this);
+            var weeklyJob = new WeeklySummaryJob(this);
+
+            _jobContainer.AddService(typeof(DailyPostJob), dailyJob);
+            _jobContainer.AddService(typeof(WeeklySummaryJob), weeklyJob);
         }
 
         private async void ScheduleJobs()
         {
-            _scheduler.JobFactory = new RfmJobFactory(this);
-
             var weeklyJob = JobBuilder.Create<WeeklySummaryJob>()
                 .WithIdentity("weeklyJob", "weeklyGroup")
                 .Build();
@@ -300,7 +251,7 @@ namespace pepega_bot.Module
             }
         }
 
-        private async Task PostDailyMessage()
+        public async Task PostDailyMessage()
         {
             var msgSb = new StringBuilder();
             msgSb.Append($"{DailyMessageHeader} " + DateTime.Now.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture) +
@@ -316,7 +267,7 @@ namespace pepega_bot.Module
             }
         }
 
-        private async Task PostWeeklyStats()
+        public async Task PostWeeklyStats()
         {
             var weeklyResults = _dbService.GetReactsForWeekIn(DateTime.Now);  // TODO: IDateTimeProvider for unit tests?
 
