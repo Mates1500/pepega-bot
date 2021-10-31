@@ -175,6 +175,9 @@ namespace pepega_bot.Module
                 if (previousMessage.Message.Author.IsBot)
                     return;
 
+                if (previousMessage.Message.Embeds.Count == 0 && e.NewMessage.Embeds.Count != 0)
+                    return;
+
                 previousMessage.Message.Channel.SendMessageAsync(_teletobiesEmote + " EDIT " + _teletobiesEmote +
                                                                  Environment.NewLine + previousMessage.Message.Content);
                 previousMessage.AlreadyPosted = true;
