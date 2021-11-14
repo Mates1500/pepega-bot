@@ -47,6 +47,7 @@ namespace pepega_bot
         public readonly NLog.ILogger Logger;
 
         private ServiceContainer _jobContainer;
+        private bool _postGuildDataInitializationDone;
 
         private static ConfigurationService BuildConfigurationService()
         {
@@ -86,6 +87,8 @@ namespace pepega_bot
             _client = _services.GetRequiredService<DiscordSocketClient>();
             _modules = new List<IModule>();
             Logger = LogManager.GetCurrentClassLogger();
+
+            _postGuildDataInitializationDone = false;
         }
 
         public async Task MainAsync()
@@ -113,6 +116,9 @@ namespace pepega_bot
 
         private async Task OnGuildDataLoaded(SocketGuild arg)
         {
+            if (_postGuildDataInitializationDone) // this function may get called multiple times due to reconnects otherwise
+                return;
+
             if (arg.Id != ulong.Parse(_configService.Configuration["RingFit:GuildId"]))
                 return;
 
@@ -129,6 +135,8 @@ namespace pepega_bot
             _modules.Add(new RingFitModule(databaseService, _configService.Configuration,
                 commandHandlingService, _client, scheduler, _jobContainer));
             _modules.Add(new TobikExposerModule(_configService, commandHandlingService, scheduler, _jobContainer));
+
+            _postGuildDataInitializationDone = true;
         }
 
 
