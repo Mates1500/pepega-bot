@@ -14,7 +14,8 @@
     "Hamagen": 336438442286120961,
     "Paprika": 578588381060268032,
     "JaraSoukup": 66260738292854784,
-    "Tobik": 471337440469057547
+    "Tobik": 471337440469057547,
+    "Yukii": 606410119562919967
   },
   "TobikExposure": {
     "Channels": [
@@ -45,6 +46,27 @@
       [ "<:MadSamusSmash:587354988402180099>", 45 ],
       [ "<:linkrage:587340912817078307>", 60 ]
     ]
+  },
+  "Yukii": {
+    "GuildId": 445957055023546370,
+    "SummaryChannelId": 638645343197593600,
+    "ApprovedAdminIds": [
+      141216371550715904
+    ],
+    "EmoteCountMappings": {
+      "1": "1\u20E3",
+      "2": "2\u20E3",
+      "3": "3\u20E3",
+      "4": "4\u20E3",
+      "5": "5\u20E3",
+      "6": "6\u20E3",
+      "7": "7\u20E3",
+      "8": "8\u20E3",
+      "9": "9\u20E3"
+    },
+    "Schedule": {
+      "SundayWeeklyStatsList": "21:00"
+    }
   },
   "TrimVocabularyCharacters":  ",.?!",
   "DiscordBaseUrl": "https://discordapp.com",

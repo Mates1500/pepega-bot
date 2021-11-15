@@ -135,6 +135,8 @@ namespace pepega_bot
             _modules.Add(new RingFitModule(databaseService, _configService.Configuration,
                 commandHandlingService, _client, scheduler, _jobContainer));
             _modules.Add(new TobikExposerModule(_configService, commandHandlingService, scheduler, _jobContainer));
+            _modules.Add(new YukiiModule(databaseService, _configService, commandHandlingService, _client, scheduler,
+                _jobContainer));
 
             _postGuildDataInitializationDone = true;
         }

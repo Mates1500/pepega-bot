@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using pepega_bot.Services;
 
 namespace pepega_bot.Module
@@ -32,7 +31,7 @@ namespace pepega_bot.Module
             foreach (var word in words)
             {
                 var normalizedWord = word.ToLower().Trim();
-                await _dbService.InsertOrAddCountByOne(normalizedWord);
+                await _dbService.InsertOrAddWordCountByOne(normalizedWord);
             }
         }
     }

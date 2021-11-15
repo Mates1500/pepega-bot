@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using pepega_bot.Database;
 using pepega_bot.Services;
 
 namespace pepega_bot.Module
@@ -15,7 +16,7 @@ namespace pepega_bot.Module
             _dbContext = new ResultDatabaseContext(config);
         }
 
-        public async Task InsertOrAddCountByOne(string wordValue)
+        public async Task InsertOrAddWordCountByOne(string wordValue)
         {
             var currentResult = _dbContext.WordEntries.AsQueryable().Where(x => x.Value == wordValue).ToList();
             if (currentResult.Count < 1)
@@ -62,19 +63,43 @@ namespace pepega_bot.Module
             await _dbContext.SaveChangesAsync();
         }
 
+        private int GoBackDaysToStartOfTheWeek(DateTime dt)
+        {
+            if (dt.DayOfWeek != 0) // retarded murican failsafe because their week starts with Sunday
+                return (int)dt.DayOfWeek - 1;
+            return 6;
+        }
+
         public IEnumerable<RingFitReact> GetReactsForWeekIn(DateTime dt)
         {
-            var goBackDays = 0;
-            if (dt.DayOfWeek != 0) // retarded murican failsafe because their week starts with Sunday
-                goBackDays = (int) dt.DayOfWeek - 1;
-            else
-                goBackDays = 6;
+            var goBackDays = GoBackDaysToStartOfTheWeek(dt);
 
             var weekStart = dt.AddDays(-goBackDays).Date;
             var followingWeekStart = weekStart.AddDays(7).Date;
 
             return _dbContext.RingFitReacts.AsQueryable().Where(x =>
                 x.MessageTime >= weekStart && x.MessageTime < followingWeekStart);
+        }
+
+        public async Task InsertEmoteStatMatch(EmoteStatMatch esm)
+        {
+            _dbContext.EmoteStatMatches.Add(esm);
+
+            await _dbContext.SaveChangesAsync();
+        }
+
+        public IEnumerable<EmoteStatMatch> GetEmoteStatMatchesForUserAndWeekIn(ulong userId, DateTime dt)
+        {
+            var goBackDays = GoBackDaysToStartOfTheWeek(dt);
+
+            var utcDifference = DateTime.UtcNow - DateTime.Now;
+
+            var weekStartUtc = dt.AddDays(-goBackDays).Date.Add(utcDifference);
+            var followingWeekStartUtc = weekStartUtc.AddDays(7).Date.Add(utcDifference);
+
+            return _dbContext.EmoteStatMatches.AsQueryable().Where(x => x.TimestampUtc >= weekStartUtc &&
+                                                                        x.TimestampUtc < followingWeekStartUtc
+                                                                        && x.UserId == userId);
         }
     }
 }

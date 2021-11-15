@@ -5,7 +5,8 @@
     "Teletobies": "<:teletobies:904100523026829353>"
   },
   "UserIds": {
-    "Tobik": 141216371550715904
+    "Tobik": 141216371550715903,
+    "Yukii": 141216371550715904
   },
   "TobikExposure": {
     "Channels": [
@@ -29,5 +30,10 @@
       "DailyChallengePost": "06:00",
       "SundayWeeklyStatsList": "21:00"
     }
-  }
+  },
+  "Yukii": {
+    "GuildId": 636620229094539274,
+    "SummaryChannelId": 904104428393611334
+
+  } 
 }
