@@ -21,9 +21,12 @@
     "Channels": [
       638645343197593600
     ],
+    "ApprovedAdminIds": [
+      141216371550715904
+    ],
     "Schedule": {
-      "DailyClean": "8:00" 
-    } 
+      "DailyClean": "8:00"
+    }
   },
   "SpammerIds": [
     551826283793874976

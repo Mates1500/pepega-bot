@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Linq;
+using System.Text;
 using Discord;
 using Microsoft.Extensions.Configuration;
 using pepega_bot.Services;
@@ -39,6 +40,7 @@ namespace pepega_bot.Module
         private readonly Emote _teletobiesEmote;
 
         private readonly Dictionary<ulong, CustomMessageContainer> _cachedMessages;
+        private readonly ulong[] _allowedAdminIds;
 
         public TobikExposerModule(IConfigurationService config, CommandHandlingService chService, IScheduler scheduler,
             IServiceContainer jobContainer)
@@ -50,6 +52,7 @@ namespace pepega_bot.Module
             _cachedMessages = new Dictionary<ulong, CustomMessageContainer>();
 
             _allowedChannels = _config.GetSection("TobikExposure:Channels").Get<ulong[]>().ToList();
+            _allowedAdminIds = _config.GetSection("TobikExposure:ApprovedAdminIds").Get<ulong[]>();
             _tobikId = ulong.Parse(_config["UserIds:Tobik"]);
             _teletobiesEmote = Emote.Parse(_config["Emotes:Teletobies"]);
 
@@ -98,10 +101,24 @@ namespace pepega_bot.Module
             }
         }
 
+        private void MentalCheckup(MessageReceivedEventArgs e)
+        {
+            var message = new StringBuilder();
+            message.Append($"Mental Checkup for <@{_tobikId}>" + Environment.NewLine);
+            message.Append("Diagnosis: RETARDED" + Environment.NewLine);
+            message.Append("Recommended treatment: Piškot overdose");
+            e.Message.Channel.SendMessageAsync(message.ToString());
+        }
+
         private void OnMessage(object? sender, MessageReceivedEventArgs e)
         {
             if (!_allowedChannels.Contains(e.Message.Channel.Id))
                 return;
+            if (_allowedAdminIds.Contains(e.Message.Author.Id) && e.Message.Content.ToUpper() == "!MENTALCHECKUP")
+            {
+                MentalCheckup(e);
+                return;
+            }
             if (e.Message.Author.Id != _tobikId)
                 return;
 
