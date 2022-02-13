@@ -207,7 +207,7 @@ namespace pepega_bot.Module
             var thisWeekCharAvg = statMatches.Average(x => x.CharactersPerEmote);
             var lastWeekCharAvg = statMatchesLastWeek.Count > 0
                 ? statMatchesLastWeek.Average(x => x.CharactersPerEmote)
-                : 0;
+                : 0M;
             sb.Append(
                 $"Average characters per emote: {thisWeekCharAvg:0.###} " +
                 $"({lastWeekCharAvg:0.###}) " +
