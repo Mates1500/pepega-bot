@@ -22,6 +22,10 @@ namespace pepega_bot.Module
         private readonly IConfiguration _config;
         private readonly ulong _yukiiUserId;
 
+        private readonly Emoji _upArrowEmoji;
+        private readonly Emoji _downArrowEmoji;
+        private readonly Emoji _repeatArrowEmoji;
+
         private readonly Regex _emoteRegex;
         private readonly ISocketMessageChannel _kanalChannel;
         private readonly ulong[] _allowedAdminIds;
@@ -39,6 +43,10 @@ namespace pepega_bot.Module
             _kanalChannel = dsc.GetGuild(ulong.Parse(_config["Yukii:GuildId"]))
                 .GetTextChannel(ulong.Parse(_config["Yukii:SummaryChannelId"]));
             _allowedAdminIds = _config.GetSection("Yukii:ApprovedAdminIds").Get<ulong[]>();
+
+            _upArrowEmoji = new Emoji(_config["Emojis:UpArrow"]);
+            _downArrowEmoji = new Emoji(_config["Emojis:DownArrow"]);
+            _repeatArrowEmoji = new Emoji(_config["Emojis:RepeatArrow"]);
 
             _countToEmojiMappings = new Dictionary<int, Emoji>();
             MapCountsToEmotes();
@@ -150,24 +158,73 @@ namespace pepega_bot.Module
             }
         }
 
+        private Emoji Trend(decimal a, decimal b)
+        {
+            if (a > b)
+                return _upArrowEmoji;
+            else if (a == b)
+                return _repeatArrowEmoji;
+            else
+                return _downArrowEmoji; 
+        }
 
         public async Task PostWeeklyStats()
         {
-            var statMatches = _dbService.GetEmoteStatMatchesForUserAndWeekIn(_yukiiUserId, DateTime.Now).ToList();
+            var now = DateTime.Now;
+            var lastWeek = now.AddDays(-7);
+            var statMatches = _dbService.GetEmoteStatMatchesForUserAndWeekIn(_yukiiUserId, now).ToList();
+            var statMatchesLastWeek = _dbService.GetEmoteStatMatchesForUserAndWeekIn(_yukiiUserId, lastWeek).ToList();
 
             if (statMatches.Count < 1)
                 return;
 
             var sb = new StringBuilder();
             sb.Append($"Weekly Emoji stats for <@{_yukiiUserId}>" + Environment.NewLine);
-            sb.Append($"Messages posted: {statMatches.Count}" + Environment.NewLine);
-            sb.Append($"Emojis posted: {statMatches.Sum(x => x.MatchesCount)}" + Environment.NewLine);
-            sb.Append($"Characters posted (excluding emojis): {statMatches.Sum(x => x.MessageLength)}" +
+
+            var thisWeekMessages = statMatches.Count;
+            var lastWeekMessages = statMatchesLastWeek.Count;
+            sb.Append(
+                $"Messages posted: {thisWeekMessages} " +
+                $"({lastWeekMessages}) " +
+                $"{Trend(thisWeekMessages, lastWeekMessages)}" +
+                Environment.NewLine);
+
+            var thisWeekEmojis = statMatches.Sum(x => x.MatchesCount);
+            var lastWeekEmojis = statMatchesLastWeek.Sum(x => x.MatchesCount);
+            sb.Append($"Emojis posted: {thisWeekEmojis} " +
+                      $"({lastWeekEmojis}) " +
+                      $"{Trend(thisWeekEmojis, lastWeekEmojis)}" +
                       Environment.NewLine);
-            sb.Append($"Average characters per emote: {statMatches.Average(x => x.CharactersPerEmote):0.###}" +
-                      Environment.NewLine);
-            sb.Append($"Average emotes per message: {statMatches.Average(x => x.MatchesCount):0.###}" +
-                      Environment.NewLine);
+
+            var thisWeekCharacters = statMatches.Sum(x => x.MessageLength);
+            var lastWeekCharacters = statMatchesLastWeek.Sum(x => x.MessageLength);
+            sb.Append(
+                $"Characters posted (excluding emojis): {thisWeekCharacters} " +
+                $"({lastWeekCharacters}) " +
+                $"{Trend(thisWeekCharacters, lastWeekCharacters)}" +
+                Environment.NewLine);
+
+            var thisWeekCharAvg = statMatches.Average(x => x.CharactersPerEmote);
+            var lastWeekCharAvg = statMatchesLastWeek.Count > 0
+                ? statMatchesLastWeek.Average(x => x.CharactersPerEmote)
+                : 0;
+            sb.Append(
+                $"Average characters per emote: {thisWeekCharAvg:0.###} " +
+                $"({lastWeekCharAvg:0.###}) " +
+                $"{Trend(thisWeekCharAvg, lastWeekCharAvg)}" +
+                Environment.NewLine);
+
+            var thisWeekEmotePerMsg = (decimal)statMatches.Average(x => x.MatchesCount);
+            var lastWeekEmotePerMsg = statMatchesLastWeek.Count > 0
+                ? (decimal)statMatchesLastWeek.Average(x => x.MatchesCount)
+                : 0M;
+            sb.Append(
+                $"Average emotes per message: {thisWeekEmotePerMsg:0.###} " +
+                $"({lastWeekEmotePerMsg:0.###}) " +
+                $"{Trend(thisWeekEmotePerMsg, lastWeekEmotePerMsg)}" +
+                Environment.NewLine);
+            sb.Append(Environment.NewLine);
+
 
             var message = sb.ToString();
 

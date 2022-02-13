@@ -92,14 +92,13 @@ namespace pepega_bot.Module
         {
             var goBackDays = GoBackDaysToStartOfTheWeek(dt);
 
-            var utcDifference = DateTime.UtcNow - DateTime.Now;
+            var weekStart = dt.AddDays(-goBackDays).Date;
+            var followingWeekStart = weekStart.AddDays(7).Date;
 
-            var weekStartUtc = dt.AddDays(-goBackDays).Date.Add(utcDifference);
-            var followingWeekStartUtc = weekStartUtc.AddDays(7).Date.Add(utcDifference);
-
-            return _dbContext.EmoteStatMatches.AsQueryable().Where(x => x.TimestampUtc >= weekStartUtc &&
-                                                                        x.TimestampUtc < followingWeekStartUtc
-                                                                        && x.UserId == userId);
+            return _dbContext.EmoteStatMatches.AsQueryable().Where(x =>
+                x.TimestampUtc >= weekStart.ToUniversalTime() &&
+                x.TimestampUtc < followingWeekStart.ToUniversalTime() 
+                && x.UserId == userId);
         }
     }
 }
