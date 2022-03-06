@@ -29,11 +29,11 @@ namespace pepega_bot.Module
         private const string DailyMessageHeader = "RING FIT DAILY CHALLENGE";
         private readonly string _dailyMessageBase;
 
-        public RingFitModule(DatabaseService dbService, IConfiguration config, CommandHandlingService chService,
+        public RingFitModule(IConfigurationService config, CommandHandlingService chService,
             DiscordSocketClient dsc, IScheduler scheduler, IServiceContainer jobContainer)
         {
-            _dbService = dbService;
-            _config = config;
+            _dbService = new DatabaseService(config);
+            _config = config.Configuration;
             _scheduler = scheduler;
             _jobContainer = jobContainer;
 

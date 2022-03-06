@@ -31,11 +31,11 @@ namespace pepega_bot.Module
         private readonly ulong[] _allowedAdminIds;
         private readonly Dictionary<int, Emoji> _countToEmojiMappings;
 
-        public YukiiModule(DatabaseService dbService, IConfigurationService configService,
+        public YukiiModule(IConfigurationService configService,
             CommandHandlingService chService, DiscordSocketClient dsc, IScheduler scheduler,
             IServiceContainer jobContainer)
         {
-            _dbService = dbService;
+            _dbService = new DatabaseService(configService);
             _scheduler = scheduler;
             _jobContainer = jobContainer;
             _config = configService.Configuration;

@@ -132,11 +132,9 @@ namespace pepega_bot
             var jobFactory = new JobFactory(_jobContainer);
             scheduler.JobFactory = jobFactory;
 
-            _modules.Add(new RingFitModule(databaseService, _configService.Configuration,
-                commandHandlingService, _client, scheduler, _jobContainer));
+            _modules.Add(new RingFitModule(_configService, commandHandlingService, _client, scheduler, _jobContainer));
             _modules.Add(new TobikExposerModule(_configService, commandHandlingService, scheduler, _jobContainer));
-            _modules.Add(new YukiiModule(databaseService, _configService, commandHandlingService, _client, scheduler,
-                _jobContainer));
+            _modules.Add(new YukiiModule(_configService, commandHandlingService, _client, scheduler, _jobContainer));
 
             _postGuildDataInitializationDone = true;
         }
