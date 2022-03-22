@@ -21,6 +21,7 @@ namespace pepega_bot.Module
         private readonly IServiceContainer _jobContainer;
         private readonly IConfiguration _config;
         private readonly ulong _yukiiUserId;
+        private readonly ulong _thisBotId;
 
         private readonly Emoji _upArrowEmoji;
         private readonly Emoji _downArrowEmoji;
@@ -40,6 +41,7 @@ namespace pepega_bot.Module
             _jobContainer = jobContainer;
             _config = configService.Configuration;
             _yukiiUserId = ulong.Parse(_config["UserIds:Yukii"]);
+            _thisBotId = dsc.CurrentUser.Id;
             _kanalChannel = dsc.GetGuild(ulong.Parse(_config["Yukii:GuildId"]))
                 .GetTextChannel(ulong.Parse(_config["Yukii:SummaryChannelId"]));
             _allowedAdminIds = _config.GetSection("Yukii:ApprovedAdminIds").Get<ulong[]>();
@@ -56,6 +58,7 @@ namespace pepega_bot.Module
                 RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.ECMAScript);
 
             chService.MessageReceived += MessageReceivedAsync;
+            chService.MessageUpdated += MessageUpdatedAsync;
 
             AddJobsToContainer();
             ScheduleJobs();
@@ -98,7 +101,7 @@ namespace pepega_bot.Module
             }
         }
 
-        private async Task EvaluateYukiiMessage(SocketMessage message)
+        private async Task EvaluateYukiiMessage(SocketMessage message, IMessage oldMessage = null)
         {
             var matches = _emoteRegex.Matches(message.Content);
 
@@ -123,7 +126,22 @@ namespace pepega_bot.Module
                 MessageId = message.Id
             };
 
-            await _dbService.InsertEmoteStatMatch(emoteStatMatch);
+            await _dbService.InsertOrUpdateEmoteStatMatch(emoteStatMatch);
+
+            if (oldMessage != null)
+            {
+                var myReacts = oldMessage.Reactions.Where(x => x.Value.IsMe).ToList();
+
+                if (myReacts.Count > 0)
+                {
+                    foreach (var react in myReacts)
+                    {
+                        if(_countToEmojiMappings.ContainsValue(react.Key as Emoji))
+                            await oldMessage.RemoveReactionAsync(react.Key, _thisBotId);
+                    }
+                }
+            }
+
 
             if (_countToEmojiMappings.ContainsKey(matches.Count))
             {
@@ -156,6 +174,16 @@ namespace pepega_bot.Module
                     await PostWeeklyStats();
                     break;
             }
+        }
+
+        private async void MessageUpdatedAsync(object? sender, MessageUpdatedEventArgs e)
+        {
+            if (e.NewMessage.Author.Id != _yukiiUserId)
+                return;
+
+            var oldMessage = await e.Message.GetOrDownloadAsync();
+
+            await EvaluateYukiiMessage(e.NewMessage, oldMessage);
         }
 
         private Emoji Trend(decimal a, decimal b)

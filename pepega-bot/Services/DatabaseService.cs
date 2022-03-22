@@ -81,10 +81,20 @@ namespace pepega_bot.Module
                 x.MessageTime >= weekStart && x.MessageTime < followingWeekStart);
         }
 
-        public async Task InsertEmoteStatMatch(EmoteStatMatch esm)
+        public async Task InsertOrUpdateEmoteStatMatch(EmoteStatMatch esm)
         {
-            _dbContext.EmoteStatMatches.Add(esm);
+            var existingEsm = _dbContext.EmoteStatMatches.AsQueryable().Where(x => x.MessageId == esm.MessageId);
+            if (existingEsm.Any())
+            {
+                var updatedEsm = existingEsm.First();
+                updatedEsm.UpdateFrom(esm);
 
+                _dbContext.EmoteStatMatches.Update(updatedEsm);
+            }
+            else
+            {
+                _dbContext.EmoteStatMatches.Add(esm);
+            }
             await _dbContext.SaveChangesAsync();
         }
 
