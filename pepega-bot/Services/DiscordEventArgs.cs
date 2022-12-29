@@ -7,10 +7,10 @@ namespace pepega_bot.Services
     public class ReactionAddedEventArgs : EventArgs
     {
         public Cacheable<IUserMessage, ulong> Message { get; }
-        public ISocketMessageChannel Channel { get; }
+        public Cacheable<IMessageChannel, ulong> Channel { get; }
         public SocketReaction React { get; }
 
-        public ReactionAddedEventArgs(Cacheable<IUserMessage, ulong> message, ISocketMessageChannel channel, SocketReaction react)
+        public ReactionAddedEventArgs(Cacheable<IUserMessage, ulong> message, Cacheable<IMessageChannel, ulong> channel, SocketReaction react)
         {
             Message = message;
             Channel = channel;
@@ -21,10 +21,10 @@ namespace pepega_bot.Services
     internal class ReactionRemovedEventArgs
     {
         public Cacheable<IUserMessage, ulong> Message { get; }
-        public ISocketMessageChannel Channel { get; }
+        public Cacheable<IMessageChannel, ulong> Channel { get; }
         public SocketReaction React { get; }
 
-        public ReactionRemovedEventArgs(Cacheable<IUserMessage, ulong> message, ISocketMessageChannel channel, SocketReaction react)
+        public ReactionRemovedEventArgs(Cacheable<IUserMessage, ulong> message, Cacheable<IMessageChannel, ulong> channel, SocketReaction react)
         {
             Message = message;
             Channel = channel;
@@ -59,9 +59,9 @@ namespace pepega_bot.Services
     internal class MessageRemovedEventArgs
     {
         public Cacheable<IMessage, ulong> Message { get; }
-        public ISocketMessageChannel Channel { get; }
+        public Cacheable<IMessageChannel, ulong> Channel { get; }
 
-        public MessageRemovedEventArgs(Cacheable<IMessage, ulong> message, ISocketMessageChannel channel)
+        public MessageRemovedEventArgs(Cacheable<IMessage, ulong> message, Cacheable<IMessageChannel, ulong> channel)
         {
             Message = message;
             Channel = channel;

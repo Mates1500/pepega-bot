@@ -11,7 +11,7 @@ namespace pepega_bot.Utils
         public string MessageLink { get; }
 
 
-        public ReactInfo(IConfiguration config, Cacheable<IUserMessage, ulong> message, ISocketMessageChannel channel, SocketReaction react)
+        public ReactInfo(IConfiguration config, Cacheable<IUserMessage, ulong> message, IMessageChannel channel, SocketReaction react)
         {
             ReactAuthorId = react.UserId;
             GuildId = ((IGuildChannel)channel).GuildId;

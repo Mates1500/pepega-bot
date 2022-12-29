@@ -30,7 +30,7 @@ namespace pepega_bot.Module
         {
             if (!e.React.Emote.Equals(_rabbit2Emoji)) return;
 
-            var reactInfo = new ReactInfo(_config, e.Message, e.Channel, e.React);
+            var reactInfo = new ReactInfo(_config, e.Message, await e.Channel.GetOrDownloadAsync(), e.React);
             var warnMessage =
                 $"Master <@{_jaraSoukupUserId}>, your comrade <@{reactInfo.ReactAuthorId}> has found some *steamy* discussion. You should take a look." +
                 Environment.NewLine + $"Discussion reference: {reactInfo.MessageLink}";

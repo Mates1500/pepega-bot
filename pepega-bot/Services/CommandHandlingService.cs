@@ -30,7 +30,8 @@ namespace pepega_bot.Services
             discordSocketClient.ReactionRemoved += ReactionRemovedAsync;
         }
 
-        private Task ReactionAddedAsync(Cacheable<IUserMessage, ulong> message, ISocketMessageChannel channel, SocketReaction reaction)
+
+        private Task ReactionAddedAsync(Cacheable<IUserMessage, ulong> message, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
         {
             var tempCopy = ReactAdded;
             if(tempCopy == null)
@@ -43,7 +44,7 @@ namespace pepega_bot.Services
             });
         }
 
-        private Task ReactionRemovedAsync(Cacheable<IUserMessage, ulong> message, ISocketMessageChannel channel, SocketReaction reaction)
+        private Task ReactionRemovedAsync(Cacheable<IUserMessage, ulong> message, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
         {
             var tempCopy = ReactRemoved;
             if (tempCopy == null)
@@ -82,11 +83,12 @@ namespace pepega_bot.Services
             });
         }
 
-        private Task MessageDeletedAsync(Cacheable<IMessage, ulong> message, ISocketMessageChannel channel)
+        private Task MessageDeletedAsync(Cacheable<IMessage, ulong> message, Cacheable<IMessageChannel, ulong> channel)
         {
             var tempCopy = MessageRemoved;
             if (tempCopy == null)
                 return Task.CompletedTask;
+
 
             var args = new MessageRemovedEventArgs(message, channel);
             return Task.Run(() =>

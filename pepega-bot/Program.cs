@@ -21,7 +21,7 @@ namespace pepega_bot
 {
     static class Program
     {
-        private static void Main(string[] args)
+        private static void Main()
         {
             using (var dp = new DiscordProgram())
             {
@@ -46,7 +46,7 @@ namespace pepega_bot
         private readonly List<IModule> _modules;
         public readonly NLog.ILogger Logger;
 
-        private ServiceContainer _jobContainer;
+        private readonly ServiceContainer _jobContainer;
         private bool _postGuildDataInitializationDone;
 
         private static ConfigurationService BuildConfigurationService()
@@ -63,9 +63,16 @@ namespace pepega_bot
 
         private static ServiceProvider BuildServiceProvider(IConfigurationService cs)
         {
+            var clientConfig = new DiscordSocketConfig()
+            {
+                GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent
+            };
+
+            var client = new DiscordSocketClient(clientConfig);
+
             return new ServiceCollection()
                 .AddSingleton<IConfigurationService>(cs)
-                .AddSingleton<DiscordSocketClient>()
+                .AddSingleton<DiscordSocketClient>(client)
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
                 .AddSingleton<HttpClient>()

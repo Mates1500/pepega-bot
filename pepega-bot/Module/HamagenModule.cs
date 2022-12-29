@@ -30,7 +30,7 @@ namespace pepega_bot.Module
         {
             if (!e.React.Emote.Equals(_hamagenEmote)) return;
 
-            var reactInfo = new ReactInfo(_config, e.Message, e.Channel, e.React);
+            var reactInfo = new ReactInfo(_config, e.Message, await e.Channel.GetOrDownloadAsync(), e.React);
             var warnMessage =
                 $"Mayor <@{_hamagenUserId}>, one of your town villagers, <@{reactInfo.ReactAuthorId}>, requests your help!" +
                 Environment.NewLine + $"Villager's letter: {reactInfo.MessageLink}";

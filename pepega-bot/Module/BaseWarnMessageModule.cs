@@ -21,13 +21,14 @@ namespace pepega_bot.Module
             _fuckOffEmoji = new Emoji(_config["Emojis:FuckOff"]);
         }
 
-        public async Task WarnMessage(Cacheable<IUserMessage, ulong> message, ISocketMessageChannel channel, SocketReaction react, string warnMessage)
+        public async Task WarnMessage(Cacheable<IUserMessage, ulong> message, Cacheable<IMessageChannel, ulong> channel, SocketReaction react, string warnMessage)
         {
             var downloadedMessage = await message.GetOrDownloadAsync();
+            var downloadedChannel = await channel.GetOrDownloadAsync();
 
             try
             {
-                await SendWarnMessage(downloadedMessage, channel, react, warnMessage);
+                await SendWarnMessage(downloadedMessage, downloadedChannel, react, warnMessage);
             }
             catch (SpammerDetectedException)
             {
@@ -35,7 +36,7 @@ namespace pepega_bot.Module
             }
         }
 
-        private async Task SendWarnMessage(IUserMessage message, ISocketMessageChannel channel, SocketReaction react, string warnMessage)
+        private async Task SendWarnMessage(IUserMessage message, IMessageChannel channel, SocketReaction react, string warnMessage)
         {
             var spammerIds = _config.GetSection("SpammerIds").Get<ulong[]>();
             if (spammerIds.Contains(react.UserId))

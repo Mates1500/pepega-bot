@@ -161,7 +161,7 @@ namespace pepega_bot.Module
             return true;
         }
 
-        private bool IsDailyBotMessage(ISocketMessageChannel channel, IUserMessage message)
+        private bool IsDailyBotMessage(IMessageChannel channel, IUserMessage message)
         {
             if (channel.Id != _ringFitChannelId)
                 return false;
@@ -172,7 +172,7 @@ namespace pepega_bot.Module
             return message.Content.StartsWith(DailyMessageHeader);
         }
 
-        private bool IsApprovedAuthorMessage(ISocketMessageChannel channel, IUserMessage message)
+        private bool IsApprovedAuthorMessage(IMessageChannel channel, IUserMessage message)
         {
             if (channel.Id != _ringFitChannelId)
                 return false;
@@ -193,7 +193,7 @@ namespace pepega_bot.Module
             if (!IsValidReactee(e.React))
                 return;
 
-            if (!IsDailyBotMessage(e.Channel, await e.Message.GetOrDownloadAsync()))
+            if (!IsDailyBotMessage(await e.Channel.GetOrDownloadAsync(), await e.Message.GetOrDownloadAsync()))
                 return;
 
             if (!(e.React.Emote is Emote emote))
@@ -217,7 +217,7 @@ namespace pepega_bot.Module
 
         private async void OnReactRemoved(object sender, ReactionRemovedEventArgs e)
         {
-            if (!IsDailyBotMessage(e.Channel, await e.Message.GetOrDownloadAsync()))
+            if (!IsDailyBotMessage(await e.Channel.GetOrDownloadAsync(), await e.Message.GetOrDownloadAsync()))
                 return;
 
             await _dbService.RemoveRingFitReact(e.React.UserId, e.React.Emote.ToString(), e.React.MessageId);
@@ -227,7 +227,7 @@ namespace pepega_bot.Module
         {
             return; // TODO: resolve - can't download a removed message if not cached previously...
 
-            if (!IsApprovedAuthorMessage(e.Channel, await e.Message.GetOrDownloadAsync() as IUserMessage))
+            if (!IsApprovedAuthorMessage(await e.Channel.GetOrDownloadAsync(), await e.Message.GetOrDownloadAsync() as IUserMessage))
                 return;
 
             var message = await e.Message.GetOrDownloadAsync();
