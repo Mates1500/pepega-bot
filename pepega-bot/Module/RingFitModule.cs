@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using pepega_bot.Services;
 using Quartz;
@@ -304,6 +305,8 @@ namespace pepega_bot.Module
 
     }
 
+    [Index(nameof(MessageTime))]
+    [Index(nameof(UserId))]
     public class RingFitReact
     {
         public int Id { get; set; }

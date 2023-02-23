@@ -2,15 +2,17 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using pepega_bot.Module;
 
 namespace pepega_bot.Migrations
 {
     [DbContext(typeof(ResultDatabaseContext))]
-    partial class ResultDatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20230223180749_DbIndexes")]
+    partial class DbIndexes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
