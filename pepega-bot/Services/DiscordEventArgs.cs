@@ -56,7 +56,7 @@ namespace pepega_bot.Services
         }
     }
 
-    internal class MessageRemovedEventArgs
+    internal class MessageRemovedEventArgs : EventArgs
     {
         public Cacheable<IMessage, ulong> Message { get; }
         public Cacheable<IMessageChannel, ulong> Channel { get; }
