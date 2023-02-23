@@ -310,6 +310,8 @@ namespace pepega_bot.Module
         public string EmoteId { get; set; }
         public ulong UserId { get; set; }
         public ulong MessageId { get; set; }
+        public uint MinuteValue { get; set; }
+        public bool IsApproximateValue { get; set; }
         public DateTime MessageTime { get; set; }
     }
 }
