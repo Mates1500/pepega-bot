@@ -304,8 +304,8 @@ namespace pepega_bot.Module
                 MessageId = messageId
             });
 
-            await UpdateDailyMessage(date);
             await socketModal.RespondAsync($"Vaše hodnota \"{inputValInt}\" byla zaznamenána.", ephemeral: true);
+            await UpdateDailyMessage(date);
         }
 
         public async Task PostWeeklyStats()

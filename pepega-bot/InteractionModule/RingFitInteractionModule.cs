@@ -55,16 +55,16 @@ namespace pepega_bot.InteractionModule
                         MessageTime = dateSplit
                     });
 
-                    await _ringFitModule.UpdateDailyMessage(dateSplit);
                     await Context.Interaction.RespondAsync($"Vaše hodnota \"{minuteValue}+\" byla zaznamenána.", ephemeral: true);
+                    await _ringFitModule.UpdateDailyMessage(dateSplit);
                     break;
                 case RingFitConstants.ButtonRemove:
                     var date = ParseDate(dateStr);
                     var deleted = await _dbService.RemoveRingFitReact(userId, messageId);
                     if (deleted)
                     {
-                        await _ringFitModule.UpdateDailyMessage(date);
                         await Context.Interaction.RespondAsync("Váš výsledek byl úspěšně smazán.", ephemeral: true);
+                        await _ringFitModule.UpdateDailyMessage(date);
                     }
                     else
                     {
