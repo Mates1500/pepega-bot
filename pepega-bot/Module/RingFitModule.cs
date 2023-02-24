@@ -1,19 +1,34 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.Design;
 using System.Globalization;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Interactions;
+using Discord.Rest;
 using Discord.WebSocket;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using pepega_bot.Database.RingFit;
 using pepega_bot.Services;
 using Quartz;
 
 namespace pepega_bot.Module
 {
+    internal class RingFitConstants
+    {
+        public const string DailyMsgIdentifier = "rf_daily";
+        public const string ButtonWithValueClickIdentifier = "button_value";
+        public const string ButtonCustomClickIdentifier = "button_custom";
+        public const string ButtonRemove = "button_remove";
+        public const string CustomValueIdentifier = "custom_value";
+        public const string DateTimeFormat = "dd/MM/yyyy";
+    }
+
     internal class RingFitModule: IModule
     {
         private readonly DatabaseService _dbService;
@@ -22,22 +37,22 @@ namespace pepega_bot.Module
         private readonly IServiceContainer _jobContainer;
 
         private readonly Dictionary<string, int> _minuteScoresMap;
-        private readonly List<string> _trackedReacts;
         private readonly ulong[] _allowedAuthorIds;
         private readonly ulong _ringFitChannelId;
         private readonly ISocketMessageChannel _ringFitChannel;
 
+        private readonly Emoji _pencilEmoji;
+        private readonly Emoji _trashEmoji;
+
         private const string DailyMessageHeader = "RING FIT DAILY CHALLENGE";
-        private readonly string _dailyMessageBase;
 
         public RingFitModule(IConfigurationService config, CommandHandlingService chService,
-            DiscordSocketClient dsc, IScheduler scheduler, IServiceContainer jobContainer)
+            DiscordSocketClient dsc, IScheduler scheduler, IServiceContainer jobContainer, DatabaseService dbService)
         {
-            _dbService = new DatabaseService(config);
+            _dbService = dbService;
             _config = config.Configuration;
             _scheduler = scheduler;
             _jobContainer = jobContainer;
-
 
             _allowedAuthorIds = _config.GetSection("RingFit:ApprovedAuthorIds").Get<ulong[]>();
             _ringFitChannelId = Convert.ToUInt64(_config["RingFit:ChannelId"]);
@@ -45,14 +60,12 @@ namespace pepega_bot.Module
                 .GetTextChannel(_ringFitChannelId);
 
             _minuteScoresMap = MapMinuteScores();
-            _trackedReacts = _minuteScoresMap.Keys.ToList();
 
-            _dailyMessageBase = ConstructDailyMessageBase();
+            _pencilEmoji = new Emoji(_config["Emojis:Pencil"]);
+            _trashEmoji = new Emoji(_config["Emojis:Trash"]);
 
-            chService.ReactAdded += OnReactAdded;
-            chService.ReactRemoved += OnReactRemoved;
-            chService.MessageRemoved += OnMessageRemoved;
             chService.MessageReceived += OnMessageReceived;
+            chService.ModalSubmitted += OnModalSubmitted;
 
             AddJobsToContainer();
             ScheduleJobs();
@@ -124,36 +137,6 @@ namespace pepega_bot.Module
             return dict;
         }
 
-        private string ConstructDailyMessageBase()
-        {
-            var sb = new StringBuilder();
-            sb.Append("Cvičili jste dnes: " + Environment.NewLine);
-            var keysSortedByVal = _minuteScoresMap.OrderBy(x => x.Value).Select(x => x.Key).ToList();
-            for (var i = 0; i < keysSortedByVal.Count; i++)
-            {
-                var isLastIteration = i == keysSortedByVal.Count - 1;
-                sb.Append(_minuteScoresMap[keysSortedByVal[i]]); // min number of mins
-                if (!isLastIteration)
-                {
-                    sb.Append("-");
-                    sb.Append(_minuteScoresMap[keysSortedByVal[i + 1]]); // max number of mins = min number of mins of next sorted val
-                }
-                else
-                {
-                    sb.Append("+");
-                }
-                sb.Append(" min ");
-                sb.Append(keysSortedByVal[i]); // the actual emote
-                if (!isLastIteration)
-                {
-                    sb.Append(Environment.NewLine);
-                }
-            }
-
-            sb.Append("?");
-            return sb.ToString();
-        }
-
         private bool IsValidReactee(SocketReaction r)
         {
             if (r.User.IsSpecified) // this bot itself should be always cached
@@ -162,16 +145,6 @@ namespace pepega_bot.Module
             return true;
         }
 
-        private bool IsDailyBotMessage(IMessageChannel channel, IUserMessage message)
-        {
-            if (channel.Id != _ringFitChannelId)
-                return false;
-
-            if (!message.Author.IsBot)
-                return false;
-
-            return message.Content.StartsWith(DailyMessageHeader);
-        }
 
         private bool IsApprovedAuthorMessage(IMessageChannel channel, IUserMessage message)
         {
@@ -184,57 +157,7 @@ namespace pepega_bot.Module
             return _allowedAuthorIds.Contains(message.Author.Id);
         }
 
-        private string EmoteToStringCode(Emote e)
-        {
-            return e.ToString();
-        }
 
-        private async void OnReactAdded(object sender, ReactionAddedEventArgs e)
-        {
-            if (!IsValidReactee(e.React))
-                return;
-
-            if (!IsDailyBotMessage(await e.Channel.GetOrDownloadAsync(), await e.Message.GetOrDownloadAsync()))
-                return;
-
-            if (!(e.React.Emote is Emote emote))
-                return;
-
-            if (!_trackedReacts.Contains(EmoteToStringCode(emote)))
-                return;
-
-            var message = await e.Message.GetOrDownloadAsync();
-
-            var react = new RingFitReact
-            {
-                EmoteId = EmoteToStringCode(emote),
-                MessageId = message.Id,
-                UserId = e.React.UserId,
-                MessageTime = message.CreatedAt.LocalDateTime
-            };
-
-            await _dbService.InsertRingFitReact(react);
-        }
-
-        private async void OnReactRemoved(object sender, ReactionRemovedEventArgs e)
-        {
-            if (!IsDailyBotMessage(await e.Channel.GetOrDownloadAsync(), await e.Message.GetOrDownloadAsync()))
-                return;
-
-            await _dbService.RemoveRingFitReact(e.React.UserId, e.React.Emote.ToString(), e.React.MessageId);
-        }
-
-        private async void OnMessageRemoved(object sender, MessageRemovedEventArgs e)
-        {
-            return; // TODO: resolve - can't download a removed message if not cached previously...
-
-            if (!IsApprovedAuthorMessage(await e.Channel.GetOrDownloadAsync(), await e.Message.GetOrDownloadAsync() as IUserMessage))
-                return;
-
-            var message = await e.Message.GetOrDownloadAsync();
-
-            await _dbService.RemoveRingFitReactsFor(message.Id);
-        }
 
         private async void OnMessageReceived(object sender, MessageReceivedEventArgs e)
         {
@@ -252,69 +175,166 @@ namespace pepega_bot.Module
             }
         }
 
+        private MessageComponent BuildInteractButtonsForDate(DateTime dt)
+        {
+            var dateStr = dt.ToString(RingFitConstants.DateTimeFormat, CultureInfo.InvariantCulture);
+
+            var btnBuilder = new ButtonBuilder();
+
+            // pre-made approximate minute buttons
+            var buttonsRow1 = new ActionRowBuilder();
+            foreach (var mapping in _minuteScoresMap)
+            {
+                var emote = Emote.Parse(mapping.Key);
+
+                buttonsRow1.AddComponent(btnBuilder
+                    .WithStyle(ButtonStyle.Primary)
+                    .WithEmote(emote)
+                    .WithLabel($"{mapping.Value}+ min")
+                    .WithCustomId($"{RingFitConstants.DailyMsgIdentifier}:{RingFitConstants.ButtonWithValueClickIdentifier},{dateStr},{mapping.Value}")
+                    .Build());
+            }
+
+            // custom input modal
+            var buttonsRow2 = new ActionRowBuilder();
+            buttonsRow2.AddComponent(btnBuilder
+                .WithStyle(ButtonStyle.Success)
+                .WithEmote(_pencilEmoji)
+                .WithLabel("Jiné")
+                .WithCustomId($"{RingFitConstants.DailyMsgIdentifier}:{RingFitConstants.ButtonCustomClickIdentifier},{dateStr}")
+                .Build());
+
+            // remove today's result
+            buttonsRow2.AddComponent(btnBuilder
+                .WithStyle(ButtonStyle.Danger)
+                .WithEmote(_trashEmoji)
+                .WithLabel("Smazat")
+                .WithCustomId($"{RingFitConstants.DailyMsgIdentifier}:{RingFitConstants.ButtonRemove},{dateStr}")
+                .Build());
+
+            return new ComponentBuilder()
+                .AddRow(buttonsRow1)
+                .AddRow(buttonsRow2)
+                .Build();
+        }
+
+        public string GetContentsForDailyMessage(DateTime dt)
+        {
+            var dateStr = dt.ToString(RingFitConstants.DateTimeFormat, CultureInfo.InvariantCulture);
+            var msgSb = new StringBuilder();
+            msgSb.AppendLine($"{DailyMessageHeader} {dateStr}");
+            msgSb.AppendLine("Zaklikněte, jak dlouho jste cvičili v tento den tlačítkem pod zprávou.");
+
+            var reactsForThisDay = _dbService.GetReactsForDay(dt).ToList();
+
+            if (reactsForThisDay.Any())
+            {
+                msgSb.Append(Environment.NewLine);
+                msgSb.AppendLine("Aktuální výsledky:");
+
+                foreach (var react in reactsForThisDay)
+                {
+                    msgSb.Append($"<@{react.UserId}>: {react.MinuteValue}");
+                    if (react.IsApproximateValue)
+                        msgSb.Append("+");
+                    msgSb.AppendLine(" minut");
+                }
+            }
+
+            return msgSb.ToString();
+        }
+
+        public async Task UpdateDailyMessage(DateTime dt)
+        {
+            var dailyMessage = _dbService.GetDailyMessageFor(dt);
+
+            if (await _ringFitChannel.GetMessageAsync(dailyMessage.MessageId) is not RestUserMessage discordMessage)
+                return;
+
+            await discordMessage.ModifyAsync(msg => msg.Content = GetContentsForDailyMessage(dt));
+        }
+
         public async Task PostDailyMessage()
         {
-            var msgSb = new StringBuilder();
-            msgSb.Append($"{DailyMessageHeader} " + DateTime.Now.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture) +
-                         Environment.NewLine);
-            msgSb.Append(_dailyMessageBase);
+            var todayDate = DateTime.Today;
 
-            var result = msgSb.ToString();
-            
-            var sentMessage = await _ringFitChannel.SendMessageAsync(result);
-            foreach (var emote in MapMinuteScores().Select(e => Emote.Parse(e.Key)))
+            var contentsStr = GetContentsForDailyMessage(todayDate);
+
+            var buttonsComponent = BuildInteractButtonsForDate(todayDate);
+
+
+            var message = await _ringFitChannel.SendMessageAsync(contentsStr, components: buttonsComponent);
+            await _dbService.AddOrUpdateDailyMessage(new RingFitMessage
             {
-                await sentMessage.AddReactionAsync(emote);
+                MessageId = message.Id,
+                MessageTime = message.Timestamp.DateTime,
+                MessageType = RingFitMessageType.Daily
+            });
+
+        }
+
+        public async void OnModalSubmitted(object sender, SocketModal socketModal)
+        {
+            if (!socketModal.Data.CustomId.StartsWith(RingFitConstants.DailyMsgIdentifier))
+                return;
+
+            var args = socketModal.Data.CustomId[(RingFitConstants.DailyMsgIdentifier.Length + 1)..]
+                .Split(",");
+            var date = DateTime.ParseExact(args[0], RingFitConstants.DateTimeFormat, CultureInfo.InvariantCulture);
+            var userId = ulong.Parse(args[1]);
+            var messageId = ulong.Parse(args[2]);
+
+            var components = socketModal.Data.Components.ToList();
+            var inputValStr = components.First(x => x.CustomId == RingFitConstants.CustomValueIdentifier).Value;
+
+            if (!uint.TryParse(inputValStr, out uint inputValInt) || inputValInt < 1)
+            {
+                await socketModal.RespondAsync(
+                    $"Pouze kladná celá čísla jsou akceptována, vaše hodnota \"{inputValStr}\" je neplatná.",
+                    ephemeral: true);
+                return;
             }
+
+            await _dbService.InsertOrUpdateRingFitReact(new RingFitReact
+            {
+                MinuteValue = inputValInt,
+                UserId = userId,
+                IsApproximateValue = false,
+                MessageTime = date,
+                MessageId = messageId
+            });
+
+            await UpdateDailyMessage(date);
+            await socketModal.RespondAsync($"Vaše hodnota \"{inputValInt}\" byla zaznamenána.", ephemeral: true);
         }
 
         public async Task PostWeeklyStats()
         {
             var weeklyResults = _dbService.GetReactsForWeekIn(DateTime.Now);  // TODO: IDateTimeProvider for unit tests?
 
-            var groupedResults = weeklyResults.GroupBy(x => x.UserId);
-            var summedResults = new Dictionary<ulong, int>();
-            foreach (var group in groupedResults)
-            {
-                var score = 0;
-                foreach (var react in group)
+            var finalSortedResults = weeklyResults
+                .GroupBy(x => x.UserId).Select(x => new
                 {
-                    if (!_minuteScoresMap.ContainsKey(react.EmoteId))
-                        continue;
-
-                    score += _minuteScoresMap[react.EmoteId];
-                }
-                summedResults.Add(group.Key, score);
-            }
-
-            var sortedResults = summedResults.OrderByDescending(x => x.Value).ToList();
-
+                    UserId = x.Key, 
+                    MinutesTotal = x.Sum(y => y.MinuteValue),
+                    IsApproximate = x.Any(z => z.IsApproximateValue)
+                }).OrderByDescending(x => x.MinutesTotal).ToList();
 
             var sb = new StringBuilder();
-            sb.Append("Participation stats for the current week:" + Environment.NewLine);
+            sb.Append("Statistiky účasti za aktuální týden:" + Environment.NewLine);
 
-            for (var i = 0; i < sortedResults.Count; i++)
+            for (var i = 0; i < finalSortedResults.Count; i++)
             {
-                sb.Append($"{i + 1}. <@{sortedResults[i].Key}> - {sortedResults[i].Value}+ minutes" + Environment.NewLine);
+                sb.Append($"{i + 1}. <@{finalSortedResults[i].UserId}> - {finalSortedResults[i].MinutesTotal}");
+                if (finalSortedResults[i].IsApproximate)
+                    sb.Append("+");
+                sb.AppendLine(" minut");
             }
 
-            sb.Append(Environment.NewLine + "Congratulations to all the participants!");
+            sb.Append(Environment.NewLine + "Gratulujeme všem účastníkům!");
 
             await _ringFitChannel.SendMessageAsync(sb.ToString());
         }
 
-    }
-
-    [Index(nameof(MessageTime))]
-    [Index(nameof(UserId))]
-    public class RingFitReact
-    {
-        public int Id { get; set; }
-        public string EmoteId { get; set; }
-        public ulong UserId { get; set; }
-        public ulong MessageId { get; set; }
-        public uint MinuteValue { get; set; }
-        public bool IsApproximateValue { get; set; }
-        public DateTime MessageTime { get; set; }
     }
 }

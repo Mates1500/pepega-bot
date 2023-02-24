@@ -6,15 +6,18 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NLog;
 using NLog.Extensions.Logging;
+using pepega_bot.InteractionModule;
 using pepega_bot.Module;
 using pepega_bot.Scheduling;
 using pepega_bot.Services;
+using Quartz;
 using Quartz.Impl;
 
 namespace pepega_bot
@@ -43,10 +46,10 @@ namespace pepega_bot
         private readonly ConfigurationService _configService;
         private readonly ServiceProvider _services;
         private readonly DiscordSocketClient _client;
+        private readonly InteractionService _interactionService;
         private readonly List<IModule> _modules;
         public readonly NLog.ILogger Logger;
 
-        private readonly ServiceContainer _jobContainer;
         private bool _postGuildDataInitializationDone;
 
         private static ConfigurationService BuildConfigurationService()
@@ -61,7 +64,8 @@ namespace pepega_bot
                     .Build());
         }
 
-        private static ServiceProvider BuildServiceProvider(IConfigurationService cs)
+        private static async Task<ServiceProvider> BuildServiceProvider(IConfigurationService cs, 
+            IServiceContainer serviceContainer)
         {
             var clientConfig = new DiscordSocketConfig()
             {
@@ -70,13 +74,24 @@ namespace pepega_bot
 
             var client = new DiscordSocketClient(clientConfig);
 
+            var schedulerFactory = new StdSchedulerFactory();
+            var scheduler = await schedulerFactory.GetScheduler();
+            await scheduler.Start();
+
+            var jobFactory = new JobFactory(serviceContainer);
+            scheduler.JobFactory = jobFactory;
+
             return new ServiceCollection()
                 .AddSingleton<IConfigurationService>(cs)
                 .AddSingleton<DiscordSocketClient>(client)
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
                 .AddSingleton<HttpClient>()
+                .AddSingleton<ResultDatabaseContext>()
                 .AddSingleton<DatabaseService>()
+                .AddSingleton<IServiceContainer>(serviceContainer)
+                .AddSingleton<IScheduler>(scheduler)
+                .AddSingleton<RingFitModule>()
                 .AddLogging(loggingBuilder =>
                 {
                     loggingBuilder.ClearProviders();
@@ -89,9 +104,12 @@ namespace pepega_bot
         public DiscordProgram()
         {
             _configService = BuildConfigurationService();
-            _services = BuildServiceProvider(_configService);
-            _jobContainer = new ServiceContainer();
+            var quartzJobContainer = new ServiceContainer();
+            _services = BuildServiceProvider(_configService, quartzJobContainer).Result;
+
             _client = _services.GetRequiredService<DiscordSocketClient>();
+            _interactionService = new InteractionService(_client);
+
             _modules = new List<IModule>();
             Logger = LogManager.GetCurrentClassLogger();
 
@@ -102,6 +120,13 @@ namespace pepega_bot
         {
             _client.Log += Log;
             _services.GetRequiredService<CommandService>().Log += Log;
+            _interactionService.Log += Log;
+
+            _client.InteractionCreated += async (x) =>
+            {
+                var ctx = new SocketInteractionContext(_client, x);
+                await _interactionService.ExecuteCommandAsync(ctx, _services);
+            };
 
             await _client.LoginAsync(TokenType.Bot, _configService.Configuration["BotSecret"]);
             await _client.StartAsync();
@@ -121,6 +146,13 @@ namespace pepega_bot
             await Task.Delay(-1);
         }
 
+        private void WarmUpServices()
+        // should be called only once
+        // forces Service constructors to execute at least once, basically to initialize background tasks and event listeners
+        {
+            _services.GetRequiredService<RingFitModule>();
+        }
+
         private async Task OnGuildDataLoaded(SocketGuild arg)
         {
             if (_postGuildDataInitializationDone) // this function may get called multiple times due to reconnects otherwise
@@ -129,19 +161,20 @@ namespace pepega_bot
             if (arg.Id != ulong.Parse(_configService.Configuration["RingFit:GuildId"]))
                 return;
 
-            var factory = new StdSchedulerFactory();
-            var scheduler = await factory.GetScheduler();
-            await scheduler.Start();
 
             var commandHandlingService = _services.GetRequiredService<CommandHandlingService>();
+            var scheduler = _services.GetRequiredService<IScheduler>();
+            var quartzJobContainer = _services.GetRequiredService<IServiceContainer>();
             var databaseService = _services.GetRequiredService<DatabaseService>();
 
-            var jobFactory = new JobFactory(_jobContainer);
-            scheduler.JobFactory = jobFactory;
+            WarmUpServices();
 
-            _modules.Add(new RingFitModule(_configService, commandHandlingService, _client, scheduler, _jobContainer));
-            _modules.Add(new TobikExposerModule(_configService, commandHandlingService, scheduler, _jobContainer));
-            _modules.Add(new YukiiModule(_configService, commandHandlingService, _client, scheduler, _jobContainer));
+            await _interactionService.AddModuleAsync<RingFitInteractionModule>(_services); // module discovery in assembly does not seem to work
+
+
+            _modules.Add(new TobikExposerModule(_configService, commandHandlingService, scheduler, quartzJobContainer));
+            _modules.Add(new YukiiModule(_configService, commandHandlingService, _client, scheduler, quartzJobContainer,
+                databaseService));
 
             _postGuildDataInitializationDone = true;
         }

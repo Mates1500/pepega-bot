@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using pepega_bot.Database;
-using pepega_bot.Services;
+using pepega_bot.Database.RingFit;
 
 namespace pepega_bot.Module
 {
@@ -11,9 +11,9 @@ namespace pepega_bot.Module
     {
         private readonly ResultDatabaseContext _dbContext;
 
-        public DatabaseService(IConfigurationService config)
+        public DatabaseService(ResultDatabaseContext dbContext)
         {
-            _dbContext = new ResultDatabaseContext(config);
+            _dbContext = dbContext;
         }
 
         public async Task InsertOrAddWordCountByOne(string wordValue)
@@ -32,26 +32,38 @@ namespace pepega_bot.Module
             await _dbContext.SaveChangesAsync();
         }
 
-        public async Task InsertRingFitReact(RingFitReact r)
+        public async Task InsertOrUpdateRingFitReact(RingFitReact r)
         {
-            _dbContext.RingFitReacts.Add(r);
+            try
+            {
+                var currentResult = _dbContext.RingFitReacts.Single(x => x.UserId == r.UserId
+                                                                         && x.MessageId == r.MessageId);
+                // already exists
+                currentResult.MinuteValue = r.MinuteValue;
+                currentResult.IsApproximateValue = r.IsApproximateValue;
+                _dbContext.RingFitReacts.Update(currentResult);
+            }
+            catch (InvalidOperationException)
+            {
+                _dbContext.RingFitReacts.Add(r);
+            }
 
             await _dbContext.SaveChangesAsync();
         }
 
-        public async Task RemoveRingFitReact(ulong reactUserId, string emote, ulong reactedMessageId)
+        public async Task<bool> RemoveRingFitReact(ulong reactUserId, ulong reactedMessageId)
         {
             var results =
-                _dbContext.RingFitReacts.AsQueryable().Where(x => x.MessageId == reactedMessageId && 
-                                                    x.EmoteId == emote && 
-                                                    x.UserId == reactUserId)
+                _dbContext.RingFitReacts.AsQueryable().Where(x => x.MessageId == reactedMessageId &&
+                                                                  x.UserId == reactUserId)
                     .ToList();
 
             if (results.Count == 0)
-                return;
+                return false;
 
             _dbContext.Remove(results[0]);
             await _dbContext.SaveChangesAsync();
+            return true;
         }
 
         public async Task RemoveRingFitReactsFor(ulong messageId)
@@ -79,6 +91,50 @@ namespace pepega_bot.Module
 
             return _dbContext.RingFitReacts.AsQueryable().Where(x =>
                 x.MessageTime >= weekStart && x.MessageTime < followingWeekStart);
+        }
+
+        public IEnumerable<RingFitReact> GetReactsForDay(DateTime dt)
+        {
+            var currentDayStart = dt.Date;
+            var nextDayStart = dt.Date.AddDays(1);
+            return _dbContext.RingFitReacts.AsQueryable().Where(x => x.MessageTime >= currentDayStart
+                                                                     && x.MessageTime < nextDayStart);
+        }
+
+        public RingFitMessage GetDailyMessageFor(DateTime dt)
+        {
+            var currentDayStart = dt.Date;
+            var nextDayStart = dt.Date.AddDays(1);
+
+            return _dbContext.RingFitMessages.AsQueryable()
+                .Where(x =>
+                    x.MessageTime >= currentDayStart
+                    && x.MessageTime < nextDayStart 
+                    && x.MessageType == RingFitMessageType.Daily)
+                .OrderByDescending(x => x.MessageTime)
+                .First();
+        }
+
+        public async Task AddOrUpdateDailyMessage(RingFitMessage message)
+        // basically just for message id tracking
+        {
+            if (message.MessageType != RingFitMessageType.Daily)
+                throw new ArgumentException("Provided message is not of daily type");
+
+            try
+            {
+                var currentMessage = GetDailyMessageFor(message.MessageTime);
+                // message already exists
+                currentMessage.MessageId = message.MessageId;
+                _dbContext.RingFitMessages.Update(currentMessage);
+            }
+            catch (InvalidOperationException)
+            {
+                // message does not exist yet
+                _dbContext.RingFitMessages.Add(message);
+            }
+
+            await _dbContext.SaveChangesAsync();
         }
 
         public async Task InsertOrUpdateEmoteStatMatch(EmoteStatMatch esm)

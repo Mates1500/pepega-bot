@@ -11,7 +11,9 @@
     "FuckOff": "\uD83D\uDD95",
     "UpArrow": "\u2B06",
     "DownArrow": "\u2B07",
-    "RepeatArrow": "\uD83D\uDD01"
+    "RepeatArrow": "\uD83D\uDD01",
+    "Pencil": "\u270F",
+    "Trash": "\uD83D\uDDD1"
   },
   "UserIds": {
     "Hamagen": 336438442286120961,

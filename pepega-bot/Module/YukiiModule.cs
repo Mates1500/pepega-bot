@@ -34,9 +34,9 @@ namespace pepega_bot.Module
 
         public YukiiModule(IConfigurationService configService,
             CommandHandlingService chService, DiscordSocketClient dsc, IScheduler scheduler,
-            IServiceContainer jobContainer)
+            IServiceContainer jobContainer, DatabaseService dbService)
         {
-            _dbService = new DatabaseService(configService);
+            _dbService = dbService;
             _scheduler = scheduler;
             _jobContainer = jobContainer;
             _config = configService.Configuration;

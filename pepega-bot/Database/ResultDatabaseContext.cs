@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using Microsoft.EntityFrameworkCore;
 using pepega_bot.Database;
+using pepega_bot.Database.RingFit;
 using pepega_bot.Services;
 
 namespace pepega_bot.Module
@@ -38,8 +39,9 @@ namespace pepega_bot.Module
 
         public DbSet<DbWordEntry> WordEntries { get; set; }
         public DbSet<RingFitReact> RingFitReacts { get; set; }
+        public DbSet<RingFitMessage> RingFitMessages { get; set; }
         public DbSet<EmoteStatMatch> EmoteStatMatches { get; set; }
-
+        
         protected override void OnConfiguring(DbContextOptionsBuilder builder)
         {
             builder.UseSqlite(_config.SqliteDbConnectionString);

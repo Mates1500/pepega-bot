@@ -17,6 +17,7 @@ namespace pepega_bot.Services
         public event EventHandler<MessageRemovedEventArgs> MessageRemoved;
         public event EventHandler<ReactionAddedEventArgs> ReactAdded;
         public event EventHandler<ReactionRemovedEventArgs> ReactRemoved;
+        public event EventHandler<SocketModal> ModalSubmitted;
 
         public CommandHandlingService(IServiceProvider services, CommandService commandService, DiscordSocketClient discordSocketClient)
         {
@@ -28,6 +29,19 @@ namespace pepega_bot.Services
             discordSocketClient.MessageDeleted += MessageDeletedAsync;
             discordSocketClient.ReactionAdded += ReactionAddedAsync;
             discordSocketClient.ReactionRemoved += ReactionRemovedAsync;
+            discordSocketClient.ModalSubmitted += ModalSubmittedAsync;
+        }
+
+        private Task ModalSubmittedAsync(SocketModal modal)
+        {
+            var tempCopy = ModalSubmitted;
+            if(tempCopy == null)
+                return Task.CompletedTask;
+
+            return Task.Run(() =>
+            {
+                tempCopy.Invoke(this, modal);
+            });
         }
 
 
