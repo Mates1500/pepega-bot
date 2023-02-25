@@ -55,7 +55,7 @@ namespace pepega_bot.Module
 
             _emoteRegex = new Regex(
                 "(\\u00a9|\\u00ae|[\\u2000-\\u3300]|\\ud83c[\\ud000-\\udfff]|\\ud83d[\\ud000-\\udfff]|\\ud83e[\\ud000-\\udfff]|<:.+?:\\d+>)",
-                RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.ECMAScript);
+                RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.ECMAScript);
 
             chService.MessageReceived += MessageReceivedAsync;
             chService.MessageUpdated += MessageUpdatedAsync;
