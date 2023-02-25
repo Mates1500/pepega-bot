@@ -200,8 +200,8 @@ namespace pepega_bot.Module
         {
             var now = DateTime.Now;
             var lastWeek = now.AddDays(-7);
-            var statMatches = _dbService.GetEmoteStatMatchesForUserAndWeekIn(_yukiiUserId, now).ToList();
-            var statMatchesLastWeek = _dbService.GetEmoteStatMatchesForUserAndWeekIn(_yukiiUserId, lastWeek).ToList();
+            var statMatches = await _dbService.GetEmoteStatMatchesForUserAndWeekIn(_yukiiUserId, now);
+            var statMatchesLastWeek = await _dbService.GetEmoteStatMatchesForUserAndWeekIn(_yukiiUserId, lastWeek);
 
             if (statMatches.Count < 1)
                 return;

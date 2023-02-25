@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using pepega_bot.Services;
@@ -11,10 +12,19 @@ namespace pepega_bot.Module
         public ResultDatabaseContext CreateDbContext(string[] args)
         {
             var configService = new ConfigurationService(new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("config.json").Build());
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("config.json")
+                .Build()
+            );
             var config = new ConfigurationService(configService.Configuration);
 
-            return new ResultDatabaseContext(config, false);
+            var options = new DbContextOptionsBuilder<ResultDatabaseContext>()
+                .UseSqlite(config.SqliteDbConnectionString)
+                .Options;
+
+            var dbContext = new ResultDatabaseContext(options);
+
+            return dbContext;
         }
     }
 }

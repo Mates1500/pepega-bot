@@ -1,15 +1,11 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.ComponentModel.Design;
 using System.Globalization;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
-using Discord.Interactions;
 using Discord.Rest;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
@@ -218,14 +214,14 @@ namespace pepega_bot.Module
                 .Build();
         }
 
-        public string GetContentsForDailyMessage(DateTime dt)
+        public async Task<string> GetContentsForDailyMessage(DateTime dt)
         {
             var dateStr = dt.ToString(RingFitConstants.DateTimeFormat, CultureInfo.InvariantCulture);
             var msgSb = new StringBuilder();
             msgSb.AppendLine($"{DailyMessageHeader} {dateStr}");
             msgSb.AppendLine("Zaklikněte, jak dlouho jste cvičili v tento den tlačítkem pod zprávou.");
 
-            var reactsForThisDay = _dbService.GetReactsForDay(dt).ToList();
+            var reactsForThisDay = await _dbService.GetReactsForDay(dt);
 
             if (reactsForThisDay.Any())
             {
@@ -251,14 +247,14 @@ namespace pepega_bot.Module
             if (await _ringFitChannel.GetMessageAsync(dailyMessage.MessageId) is not RestUserMessage discordMessage)
                 return;
 
-            await discordMessage.ModifyAsync(msg => msg.Content = GetContentsForDailyMessage(dt));
+            await discordMessage.ModifyAsync(async msg => msg.Content = await GetContentsForDailyMessage(dt));
         }
 
         public async Task PostDailyMessage()
         {
             var todayDate = DateTime.Today;
 
-            var contentsStr = GetContentsForDailyMessage(todayDate);
+            var contentsStr = await GetContentsForDailyMessage(todayDate);
 
             var buttonsComponent = BuildInteractButtonsForDate(todayDate);
 
@@ -310,7 +306,7 @@ namespace pepega_bot.Module
 
         public async Task PostWeeklyStats()
         {
-            var weeklyResults = _dbService.GetReactsForWeekIn(DateTime.Now);  // TODO: IDateTimeProvider for unit tests?
+            var weeklyResults = await _dbService.GetReactsForWeekIn(DateTime.Now);  // TODO: IDateTimeProvider for unit tests?
 
             var finalSortedResults = weeklyResults
                 .GroupBy(x => x.UserId).Select(x => new

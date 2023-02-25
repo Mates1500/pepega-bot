@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using pepega_bot.Module;
 
+#nullable disable
+
 namespace pepega_bot.Migrations
 {
     [DbContext(typeof(ResultDatabaseContext))]
@@ -13,8 +15,7 @@ namespace pepega_bot.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder
-                .HasAnnotation("ProductVersion", "5.0.17");
+            modelBuilder.HasAnnotation("ProductVersion", "5.0.17");
 
             modelBuilder.Entity("pepega_bot.Database.EmoteStatMatch", b =>
                 {
@@ -41,7 +42,7 @@ namespace pepega_bot.Migrations
 
                     b.HasIndex("TimestampUtc");
 
-                    b.ToTable("EmoteStatMatches");
+                    b.ToTable("EmoteStatMatches", (string)null);
                 });
 
             modelBuilder.Entity("pepega_bot.Database.RingFit.RingFitMessage", b =>
@@ -61,7 +62,7 @@ namespace pepega_bot.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("RingFitMessages");
+                    b.ToTable("RingFitMessages", (string)null);
                 });
 
             modelBuilder.Entity("pepega_bot.Database.RingFit.RingFitReact", b =>
@@ -94,7 +95,7 @@ namespace pepega_bot.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("RingFitReacts");
+                    b.ToTable("RingFitReacts", (string)null);
                 });
 
             modelBuilder.Entity("pepega_bot.Module.DbWordEntry", b =>
@@ -113,7 +114,7 @@ namespace pepega_bot.Migrations
 
                     b.HasIndex("Value");
 
-                    b.ToTable("WordEntries");
+                    b.ToTable("WordEntries", (string)null);
                 });
 #pragma warning restore 612, 618
         }

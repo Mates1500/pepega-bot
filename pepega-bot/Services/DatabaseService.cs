@@ -2,26 +2,41 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using pepega_bot.Database;
 using pepega_bot.Database.RingFit;
+using pepega_bot.Services;
 
 namespace pepega_bot.Module
 {
     internal class DatabaseService
     {
-        private readonly ResultDatabaseContext _dbContext;
+        private readonly PooledDbContextFactory<ResultDatabaseContext> _contextFactory;
 
-        public DatabaseService(ResultDatabaseContext dbContext)
+        public DatabaseService(IConfigurationService config)
         {
-            _dbContext = dbContext;
+            var options = new DbContextOptionsBuilder<ResultDatabaseContext>()
+                .UseSqlite(config.SqliteDbConnectionString)
+                .Options;
+
+            using (var dbContext = new ResultDatabaseContext(options))
+            {
+                // just initialize it with config to ensure migrations run
+                dbContext.InitializeDatabase(config);
+            }
+
+            _contextFactory = new PooledDbContextFactory<ResultDatabaseContext>(options, poolSize: 16);
         }
 
         public async Task InsertOrAddWordCountByOne(string wordValue)
         {
-            var currentResult = _dbContext.WordEntries.AsQueryable().Where(x => x.Value == wordValue).ToList();
+            await using var dbContext = await _contextFactory.CreateDbContextAsync();
+
+            var currentResult = dbContext.WordEntries.AsQueryable().Where(x => x.Value == wordValue).ToList();
             if (currentResult.Count < 1)
             {
-                _dbContext.WordEntries.Add(new DbWordEntry {Value = wordValue, Count = 1});
+                dbContext.WordEntries.Add(new DbWordEntry {Value = wordValue, Count = 1});
             }
             else
             {
@@ -29,50 +44,56 @@ namespace pepega_bot.Module
                 currentWord.Count += 1;
             }
 
-            await _dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync();
         }
 
         public async Task InsertOrUpdateRingFitReact(RingFitReact r)
         {
+            await using var dbContext = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                var currentResult = _dbContext.RingFitReacts.Single(x => x.UserId == r.UserId
+                var currentResult = dbContext.RingFitReacts.Single(x => x.UserId == r.UserId
                                                                          && x.MessageId == r.MessageId);
                 // already exists
                 currentResult.MinuteValue = r.MinuteValue;
                 currentResult.IsApproximateValue = r.IsApproximateValue;
-                _dbContext.RingFitReacts.Update(currentResult);
+                dbContext.RingFitReacts.Update(currentResult);
             }
             catch (InvalidOperationException)
             {
-                _dbContext.RingFitReacts.Add(r);
+                dbContext.RingFitReacts.Add(r);
             }
 
-            await _dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync();
         }
 
         public async Task<bool> RemoveRingFitReact(ulong reactUserId, ulong reactedMessageId)
         {
+            await using var dbContext = await _contextFactory.CreateDbContextAsync();
+
             var results =
-                _dbContext.RingFitReacts.AsQueryable().Where(x => x.MessageId == reactedMessageId &&
+                dbContext.RingFitReacts.AsQueryable().Where(x => x.MessageId == reactedMessageId &&
                                                                   x.UserId == reactUserId)
                     .ToList();
 
             if (results.Count == 0)
                 return false;
 
-            _dbContext.Remove(results[0]);
-            await _dbContext.SaveChangesAsync();
+            dbContext.Remove(results[0]);
+            await dbContext.SaveChangesAsync();
             return true;
         }
 
         public async Task RemoveRingFitReactsFor(ulong messageId)
         {
-            var messagesToRemove = _dbContext.RingFitReacts.AsQueryable().Where(x => x.MessageId == messageId);
+            await using var dbContext = await _contextFactory.CreateDbContextAsync();
 
-            _dbContext.RingFitReacts.RemoveRange(messagesToRemove);
+            var messagesToRemove = dbContext.RingFitReacts.AsQueryable().Where(x => x.MessageId == messageId);
 
-            await _dbContext.SaveChangesAsync();
+            dbContext.RingFitReacts.RemoveRange(messagesToRemove);
+
+            await dbContext.SaveChangesAsync();
         }
 
         private int GoBackDaysToStartOfTheWeek(DateTime dt)
@@ -82,31 +103,39 @@ namespace pepega_bot.Module
             return 6;
         }
 
-        public IEnumerable<RingFitReact> GetReactsForWeekIn(DateTime dt)
+        public async Task<List<RingFitReact>> GetReactsForWeekIn(DateTime dt)
         {
+            await using var dbContext = await _contextFactory.CreateDbContextAsync();
+
             var goBackDays = GoBackDaysToStartOfTheWeek(dt);
 
             var weekStart = dt.AddDays(-goBackDays).Date;
             var followingWeekStart = weekStart.AddDays(7).Date;
 
-            return _dbContext.RingFitReacts.AsQueryable().Where(x =>
-                x.MessageTime >= weekStart && x.MessageTime < followingWeekStart);
+            return await dbContext.RingFitReacts.AsQueryable().Where(x =>
+                x.MessageTime >= weekStart && x.MessageTime < followingWeekStart)
+                .ToListAsync();
         }
 
-        public IEnumerable<RingFitReact> GetReactsForDay(DateTime dt)
+        public async Task<List<RingFitReact>> GetReactsForDay(DateTime dt)
         {
+            await using var dbContext = await _contextFactory.CreateDbContextAsync();
+
             var currentDayStart = dt.Date;
             var nextDayStart = dt.Date.AddDays(1);
-            return _dbContext.RingFitReacts.AsQueryable().Where(x => x.MessageTime >= currentDayStart
-                                                                     && x.MessageTime < nextDayStart);
+            return await dbContext.RingFitReacts.AsQueryable().Where(x => x.MessageTime >= currentDayStart
+                                                                          && x.MessageTime < nextDayStart)
+                .ToListAsync();
         }
 
         public RingFitMessage GetDailyMessageFor(DateTime dt)
         {
+            using var dbContext = _contextFactory.CreateDbContext();
+
             var currentDayStart = dt.Date;
             var nextDayStart = dt.Date.AddDays(1);
 
-            return _dbContext.RingFitMessages.AsQueryable()
+            return dbContext.RingFitMessages.AsQueryable()
                 .Where(x =>
                     x.MessageTime >= currentDayStart
                     && x.MessageTime < nextDayStart 
@@ -121,50 +150,57 @@ namespace pepega_bot.Module
             if (message.MessageType != RingFitMessageType.Daily)
                 throw new ArgumentException("Provided message is not of daily type");
 
+            await using var dbContext = await _contextFactory.CreateDbContextAsync();
+
             try
             {
                 var currentMessage = GetDailyMessageFor(message.MessageTime);
                 // message already exists
                 currentMessage.MessageId = message.MessageId;
-                _dbContext.RingFitMessages.Update(currentMessage);
+                dbContext.RingFitMessages.Update(currentMessage);
             }
             catch (InvalidOperationException)
             {
                 // message does not exist yet
-                _dbContext.RingFitMessages.Add(message);
+                dbContext.RingFitMessages.Add(message);
             }
 
-            await _dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync();
         }
 
         public async Task InsertOrUpdateEmoteStatMatch(EmoteStatMatch esm)
         {
-            var existingEsm = _dbContext.EmoteStatMatches.AsQueryable().Where(x => x.MessageId == esm.MessageId);
+            await using var dbContext = await _contextFactory.CreateDbContextAsync();
+
+            var existingEsm = dbContext.EmoteStatMatches.AsQueryable().Where(x => x.MessageId == esm.MessageId);
             if (existingEsm.Any())
             {
                 var updatedEsm = existingEsm.First();
                 updatedEsm.UpdateFrom(esm);
 
-                _dbContext.EmoteStatMatches.Update(updatedEsm);
+                dbContext.EmoteStatMatches.Update(updatedEsm);
             }
             else
             {
-                _dbContext.EmoteStatMatches.Add(esm);
+                dbContext.EmoteStatMatches.Add(esm);
             }
-            await _dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync();
         }
 
-        public IEnumerable<EmoteStatMatch> GetEmoteStatMatchesForUserAndWeekIn(ulong userId, DateTime dt)
+        public async Task<List<EmoteStatMatch>> GetEmoteStatMatchesForUserAndWeekIn(ulong userId, DateTime dt)
         {
+            await using var dbContext = await _contextFactory.CreateDbContextAsync();
+
             var goBackDays = GoBackDaysToStartOfTheWeek(dt);
 
             var weekStart = dt.AddDays(-goBackDays).Date;
             var followingWeekStart = weekStart.AddDays(7).Date;
 
-            return _dbContext.EmoteStatMatches.AsQueryable().Where(x =>
+            return await dbContext.EmoteStatMatches.AsQueryable().Where(x =>
                 x.TimestampUtc >= weekStart.ToUniversalTime() &&
                 x.TimestampUtc < followingWeekStart.ToUniversalTime() 
-                && x.UserId == userId);
+                && x.UserId == userId)
+                .ToListAsync();
         }
     }
 }
