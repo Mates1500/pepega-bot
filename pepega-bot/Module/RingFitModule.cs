@@ -133,14 +133,6 @@ namespace pepega_bot.Module
             return dict;
         }
 
-        private bool IsValidReactee(SocketReaction r)
-        {
-            if (r.User.IsSpecified) // this bot itself should be always cached
-                if (r.User.Value.IsBot)
-                    return false;
-            return true;
-        }
-
 
         private bool IsApprovedAuthorMessage(IMessageChannel channel, IUserMessage message)
         {
@@ -232,7 +224,7 @@ namespace pepega_bot.Module
                 {
                     msgSb.Append($"<@{react.UserId}>: {react.MinuteValue}");
                     if (react.IsApproximateValue)
-                        msgSb.Append("+");
+                        msgSb.Append('+');
                     msgSb.AppendLine(" minut");
                 }
             }
@@ -323,7 +315,7 @@ namespace pepega_bot.Module
             {
                 sb.Append($"{i + 1}. <@{finalSortedResults[i].UserId}> - {finalSortedResults[i].MinutesTotal}");
                 if (finalSortedResults[i].IsApproximate)
-                    sb.Append("+");
+                    sb.Append('+');
                 sb.AppendLine(" minut");
             }
 

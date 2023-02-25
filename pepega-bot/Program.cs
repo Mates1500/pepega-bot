@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NLog;
 using NLog.Extensions.Logging;
+using pepega_bot.Database;
 using pepega_bot.InteractionModule;
 using pepega_bot.Module;
 using pepega_bot.Scheduling;

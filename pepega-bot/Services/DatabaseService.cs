@@ -6,9 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using pepega_bot.Database;
 using pepega_bot.Database.RingFit;
-using pepega_bot.Services;
 
-namespace pepega_bot.Module
+namespace pepega_bot.Services
 {
     internal class DatabaseService
     {
@@ -85,18 +84,7 @@ namespace pepega_bot.Module
             return true;
         }
 
-        public async Task RemoveRingFitReactsFor(ulong messageId)
-        {
-            await using var dbContext = await _contextFactory.CreateDbContextAsync();
-
-            var messagesToRemove = dbContext.RingFitReacts.AsQueryable().Where(x => x.MessageId == messageId);
-
-            dbContext.RingFitReacts.RemoveRange(messagesToRemove);
-
-            await dbContext.SaveChangesAsync();
-        }
-
-        private int GoBackDaysToStartOfTheWeek(DateTime dt)
+        private static int GoBackDaysToStartOfTheWeek(DateTime dt)
         {
             if (dt.DayOfWeek != 0) // retarded murican failsafe because their week starts with Sunday
                 return (int)dt.DayOfWeek - 1;

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using pepega_bot.Services;
 
-namespace pepega_bot.Module
+namespace pepega_bot.Database
 {
     // For DB migration creation through 'dotnet ef' CLI
     internal class ResultDatabaseContextFactory : IDesignTimeDbContextFactory<ResultDatabaseContext>

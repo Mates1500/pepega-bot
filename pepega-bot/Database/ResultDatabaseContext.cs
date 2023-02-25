@@ -1,11 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
-using pepega_bot.Database;
+﻿using System;
+using System.IO;
+using Microsoft.EntityFrameworkCore;
 using pepega_bot.Database.RingFit;
 using pepega_bot.Services;
-using System.IO;
-using System;
 
-namespace pepega_bot.Module
+namespace pepega_bot.Database
 {
     internal class ResultDatabaseContext : DbContext
     {

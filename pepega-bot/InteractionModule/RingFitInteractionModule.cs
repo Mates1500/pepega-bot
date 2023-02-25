@@ -6,6 +6,7 @@ using Discord;
 using Discord.WebSocket;
 using pepega_bot.Database.RingFit;
 using pepega_bot.Module;
+using pepega_bot.Services;
 
 namespace pepega_bot.InteractionModule
 {

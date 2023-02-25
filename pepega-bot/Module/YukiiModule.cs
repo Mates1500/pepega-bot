@@ -160,7 +160,7 @@ namespace pepega_bot.Module
             return _allowedAdminIds.Contains(message.Author.Id);
         }
 
-        private async void MessageReceivedAsync(object? sender, MessageReceivedEventArgs e)
+        private async void MessageReceivedAsync(object sender, MessageReceivedEventArgs e)
         {
             if (e.Message.Author.Id == _yukiiUserId)
                 await EvaluateYukiiMessage(e.Message);
@@ -176,7 +176,7 @@ namespace pepega_bot.Module
             }
         }
 
-        private async void MessageUpdatedAsync(object? sender, MessageUpdatedEventArgs e)
+        private async void MessageUpdatedAsync(object sender, MessageUpdatedEventArgs e)
         {
             if (e.NewMessage.Author.Id != _yukiiUserId)
                 return;
