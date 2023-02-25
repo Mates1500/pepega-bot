@@ -188,7 +188,7 @@ namespace pepega_bot.Module
             buttonsRow2.AddComponent(btnBuilder
                 .WithStyle(ButtonStyle.Success)
                 .WithEmote(_pencilEmoji)
-                .WithLabel("Jiné")
+                .WithLabel("Vlastní")
                 .WithCustomId($"{RingFitConstants.DailyMsgIdentifier}:{RingFitConstants.ButtonCustomClickIdentifier},{dateStr}")
                 .Build());
 
