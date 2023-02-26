@@ -11,7 +11,9 @@
     "FuckOff": "\uD83D\uDD95",
     "UpArrow": "\u2B06",
     "DownArrow": "\u2B07",
-    "RepeatArrow": "\uD83D\uDD01"
+    "RepeatArrow": "\uD83D\uDD01",
+    "Pencil": "\u270F",
+    "Trash": "\uD83D\uDDD1"
   },
   "UserIds": {
     "Hamagen": 336438442286120961,
@@ -51,7 +53,8 @@
       [ "<:sonic_dab:587345560109842454>", 30 ],
       [ "<:MadSamusSmash:587354988402180099>", 45 ],
       [ "<:linkrage:587340912817078307>", 60 ]
-    ]
+    ],
+    "NoResultsGifLink": "https://tenor.com/view/isabelle-animal-crossing-sad-worried-gif-16995410"
   },
   "Yukii": {
     "GuildId": 445957055023546370,

@@ -1,48 +1,54 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using Microsoft.EntityFrameworkCore;
-using pepega_bot.Database;
+using pepega_bot.Database.RingFit;
 using pepega_bot.Services;
 
-namespace pepega_bot.Module
+namespace pepega_bot.Database
 {
     internal class ResultDatabaseContext : DbContext
     {
-        private readonly IConfigurationService _config;
+        public DbSet<DbWordEntry> WordEntries { get; set; }
 
-        public ResultDatabaseContext(IConfigurationService config, bool runtime=true)
+        public DbSet<RingFitReact> RingFitReacts { get; set; }
+
+        public DbSet<RingFitMessage> RingFitMessages { get; set; }
+
+        public DbSet<EmoteStatMatch> EmoteStatMatches { get; set; }
+
+        private static bool _initialized = false;
+
+        public ResultDatabaseContext(DbContextOptions options): base(options)
         {
-            _config = config;
 
-            Initialize(runtime);
         }
 
-        private void Initialize(bool runtime)
+
+        public void InitializeDatabase(IConfigurationService config, bool runtime = true)
         {
+            if (_initialized)
+                return;
+
+            if (config == null)
+                throw new ArgumentNullException("Config can't be null while executing this method");
+
             if (runtime)
             {
-                EnsureDatabaseExists();
+                EnsureDatabaseExists(config);
             }
             Database.Migrate();
+            _initialized = true;
         }
 
-        private void EnsureDatabaseExists()
+        private void EnsureDatabaseExists(IConfigurationService config)
         {
             // sort of a hack, for some reason using migrations without an empty DB existing first initializes the DB with the tables up without migrations and then errors out on migrations desync...
-            var file = new FileInfo(_config.Configuration["SqliteDbLocation"]);
+            var file = new FileInfo(config.Configuration["SqliteDbLocation"]);
             file.Directory?.Create();
             if (!File.Exists(file.FullName))
                 using (File.Create(file.FullName))
                 {
                 }
-        }
-
-        public DbSet<DbWordEntry> WordEntries { get; set; }
-        public DbSet<RingFitReact> RingFitReacts { get; set; }
-        public DbSet<EmoteStatMatch> EmoteStatMatches { get; set; }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder builder)
-        {
-            builder.UseSqlite(_config.SqliteDbConnectionString);
         }
     }
 }

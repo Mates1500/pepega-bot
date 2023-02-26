@@ -34,9 +34,9 @@ namespace pepega_bot.Module
 
         public YukiiModule(IConfigurationService configService,
             CommandHandlingService chService, DiscordSocketClient dsc, IScheduler scheduler,
-            IServiceContainer jobContainer)
+            IServiceContainer jobContainer, DatabaseService dbService)
         {
-            _dbService = new DatabaseService(configService);
+            _dbService = dbService;
             _scheduler = scheduler;
             _jobContainer = jobContainer;
             _config = configService.Configuration;
@@ -55,7 +55,7 @@ namespace pepega_bot.Module
 
             _emoteRegex = new Regex(
                 "(\\u00a9|\\u00ae|[\\u2000-\\u3300]|\\ud83c[\\ud000-\\udfff]|\\ud83d[\\ud000-\\udfff]|\\ud83e[\\ud000-\\udfff]|<:.+?:\\d+>)",
-                RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.ECMAScript);
+                RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.ECMAScript);
 
             chService.MessageReceived += MessageReceivedAsync;
             chService.MessageUpdated += MessageUpdatedAsync;
@@ -160,7 +160,7 @@ namespace pepega_bot.Module
             return _allowedAdminIds.Contains(message.Author.Id);
         }
 
-        private async void MessageReceivedAsync(object? sender, MessageReceivedEventArgs e)
+        private async void MessageReceivedAsync(object sender, MessageReceivedEventArgs e)
         {
             if (e.Message.Author.Id == _yukiiUserId)
                 await EvaluateYukiiMessage(e.Message);
@@ -176,7 +176,7 @@ namespace pepega_bot.Module
             }
         }
 
-        private async void MessageUpdatedAsync(object? sender, MessageUpdatedEventArgs e)
+        private async void MessageUpdatedAsync(object sender, MessageUpdatedEventArgs e)
         {
             if (e.NewMessage.Author.Id != _yukiiUserId)
                 return;
@@ -200,8 +200,8 @@ namespace pepega_bot.Module
         {
             var now = DateTime.Now;
             var lastWeek = now.AddDays(-7);
-            var statMatches = _dbService.GetEmoteStatMatchesForUserAndWeekIn(_yukiiUserId, now).ToList();
-            var statMatchesLastWeek = _dbService.GetEmoteStatMatchesForUserAndWeekIn(_yukiiUserId, lastWeek).ToList();
+            var statMatches = await _dbService.GetEmoteStatMatchesForUserAndWeekIn(_yukiiUserId, now);
+            var statMatchesLastWeek = await _dbService.GetEmoteStatMatchesForUserAndWeekIn(_yukiiUserId, lastWeek);
 
             if (statMatches.Count < 1)
                 return;

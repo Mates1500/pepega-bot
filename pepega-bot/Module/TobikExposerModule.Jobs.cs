@@ -14,7 +14,10 @@ namespace pepega_bot.Module
 
         public async Task Execute(IJobExecutionContext context)
         {
-            _tem.Clean();
+            await Task.Run(() =>
+            {
+                _tem.Clean();
+            });
         }
     }
 }

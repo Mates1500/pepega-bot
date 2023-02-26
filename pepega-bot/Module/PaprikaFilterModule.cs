@@ -13,7 +13,7 @@ namespace pepega_bot.Module
     {
         private readonly IDiscordClient _discordClient;
         private readonly IConfiguration _config;
-        private readonly Emote LinkRageEmote;
+        private readonly Emote _linkRageEmote;
         public PaprikaFilterModule(IConfigurationService configService, CommandHandlingService chService, IDiscordClient discordClient)
         {
             _discordClient = discordClient;
@@ -22,7 +22,7 @@ namespace pepega_bot.Module
             chService.MessageReceived += MessageReceivedAsync;
             chService.MessageUpdated += MessageUpdatedAsync;
 
-            LinkRageEmote = Emote.Parse(_config["Emotes:GooseHonkKnife"]);
+            _linkRageEmote = Emote.Parse(_config["Emotes:GooseHonkKnife"]);
         }
 
         private async void MessageReceivedAsync(object sender, MessageReceivedEventArgs e)
@@ -49,7 +49,7 @@ namespace pepega_bot.Module
 
             if (repairedMessage.Phrases.Count < 1)
             {
-                await ((IUserMessage) message).RemoveReactionAsync(LinkRageEmote, _discordClient.CurrentUser);
+                await ((IUserMessage) message).RemoveReactionAsync(_linkRageEmote, _discordClient.CurrentUser);
                 return;
             }
 
@@ -61,7 +61,7 @@ namespace pepega_bot.Module
                 sb.Append(Environment.NewLine + $"{phrase.OriginalPhrase} -> {phrase.CorrectedPhrase}");
             }
 
-            await ((IUserMessage) message).AddReactionAsync(LinkRageEmote);
+            await ((IUserMessage) message).AddReactionAsync(_linkRageEmote);
         }
 
         private RepairedMessage RepairMessage(string content)

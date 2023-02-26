@@ -110,7 +110,7 @@ namespace pepega_bot.Module
             e.Message.Channel.SendMessageAsync(message.ToString());
         }
 
-        private void OnMessage(object? sender, MessageReceivedEventArgs e)
+        private void OnMessage(object sender, MessageReceivedEventArgs e)
         {
             if (!_allowedChannels.Contains(e.Message.Channel.Id))
                 return;
@@ -130,7 +130,7 @@ namespace pepega_bot.Module
         }
 
 
-        private void OnMessageRemoved(object? sender, MessageRemovedEventArgs e)
+        private void OnMessageRemoved(object sender, MessageRemovedEventArgs e)
         {
             if (!_allowedChannels.Contains(e.Channel.Id))
                 return;
@@ -148,7 +148,7 @@ namespace pepega_bot.Module
             }
         }
 
-        private void OnMessageUpdated(object? sender, MessageUpdatedEventArgs e)
+        private void OnMessageUpdated(object sender, MessageUpdatedEventArgs e)
         {
             if (!_allowedChannels.Contains(e.Channel.Id))
                 return;

@@ -1,7 +1,9 @@
 ﻿using System;
+using Microsoft.EntityFrameworkCore;
 
 namespace pepega_bot.Database
 {
+    [Index(nameof(TimestampUtc))]
     internal class EmoteStatMatch
     {
         public uint Id { get; set; }

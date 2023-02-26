@@ -2,21 +2,22 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using pepega_bot.Database;
 using pepega_bot.Module;
 
-#nullable disable
-
 namespace pepega_bot.Migrations
 {
     [DbContext(typeof(ResultDatabaseContext))]
-    partial class ResultDatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20230223180749_DbIndexes")]
+    partial class DbIndexes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "5.0.17");
+            modelBuilder
+                .HasAnnotation("ProductVersion", "5.0.17");
 
             modelBuilder.Entity("pepega_bot.Database.EmoteStatMatch", b =>
                 {
@@ -43,30 +44,29 @@ namespace pepega_bot.Migrations
 
                     b.HasIndex("TimestampUtc");
 
-                    b.ToTable("EmoteStatMatches", (string)null);
+                    b.ToTable("EmoteStatMatches");
                 });
 
-            modelBuilder.Entity("pepega_bot.Database.RingFit.RingFitMessage", b =>
+            modelBuilder.Entity("pepega_bot.Module.DbWordEntry", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<ulong>("MessageId")
+                    b.Property<int>("Count")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime>("MessageTime")
+                    b.Property<string>("Value")
                         .HasColumnType("TEXT");
-
-                    b.Property<int>("MessageType")
-                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
-                    b.ToTable("RingFitMessages", (string)null);
+                    b.HasIndex("Value");
+
+                    b.ToTable("WordEntries");
                 });
 
-            modelBuilder.Entity("pepega_bot.Database.RingFit.RingFitReact", b =>
+            modelBuilder.Entity("pepega_bot.Module.RingFitReact", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -96,26 +96,7 @@ namespace pepega_bot.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("RingFitReacts", (string)null);
-                });
-
-            modelBuilder.Entity("pepega_bot.Module.DbWordEntry", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Count")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Value")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Value");
-
-                    b.ToTable("WordEntries", (string)null);
+                    b.ToTable("RingFitReacts");
                 });
 #pragma warning restore 612, 618
         }
