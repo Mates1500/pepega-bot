@@ -14,5 +14,10 @@ namespace pepega_bot.Database.RingFit
         public uint MinuteValue { get; set; }
         public bool IsApproximateValue { get; set; }
         public DateTime MessageTime { get; set; }
+
+        public override string ToString()
+        {
+            return $"UserId - {UserId}, {MinuteValue} minutes, IsApproximate {IsApproximateValue}";
+        }
     }
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using NLog;
 using pepega_bot.Database;
 using pepega_bot.Database.RingFit;
 
@@ -12,9 +13,11 @@ namespace pepega_bot.Services
     internal class DatabaseService
     {
         private readonly PooledDbContextFactory<ResultDatabaseContext> _contextFactory;
+        private readonly ILogger _logger;
 
         public DatabaseService(IConfigurationService config)
         {
+            _logger = LogManager.GetCurrentClassLogger();
             var options = new DbContextOptionsBuilder<ResultDatabaseContext>()
                 .UseSqlite(config.SqliteDbConnectionString)
                 .Options;
@@ -65,6 +68,7 @@ namespace pepega_bot.Services
             }
 
             await dbContext.SaveChangesAsync();
+            _logger.Info($"RF reacts - Inserted or updated {r.ToString()}");
         }
 
         public async Task<bool> RemoveRingFitReact(ulong reactUserId, ulong reactedMessageId)
@@ -81,6 +85,7 @@ namespace pepega_bot.Services
 
             dbContext.Remove(results[0]);
             await dbContext.SaveChangesAsync();
+            _logger.Info($"RF reacts - Removed {results[0].ToString()}");
             return true;
         }
 
