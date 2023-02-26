@@ -308,6 +308,12 @@ namespace pepega_bot.Module
                     IsApproximate = x.Any(z => z.IsApproximateValue)
                 }).OrderByDescending(x => x.MinutesTotal).ToList();
 
+            if (finalSortedResults.Count < 1)
+            {
+                await _ringFitChannel.SendMessageAsync(_config["RingFit:NoResultsGifLink"]);
+                return;
+            }
+
             var sb = new StringBuilder();
             sb.Append("Statistiky účasti za aktuální týden:" + Environment.NewLine);
 
