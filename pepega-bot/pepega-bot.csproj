@@ -17,13 +17,13 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="config.dev.json">
+    <None Update="VolData\config.dev.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="config.json">
+    <None Update="VolData\config.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="config.secret.json">
+    <None Update="VolData\config.secret.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="nlog.config">

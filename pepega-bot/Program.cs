@@ -56,7 +56,7 @@ namespace pepega_bot
         private static ConfigurationService BuildConfigurationService()
         {
             return new ConfigurationService(
-                new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory())
+                new ConfigurationBuilder().SetBasePath(Path.Join(Directory.GetCurrentDirectory(), "VolData"))
                     .AddJsonFile("config.json")
                     .AddJsonFile("config.secret.json")
 #if DEBUG

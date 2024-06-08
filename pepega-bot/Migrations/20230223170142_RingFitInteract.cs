@@ -21,7 +21,7 @@ namespace pepega_bot.Migrations
                 nullable: false,
                 defaultValue: 0);
 
-            var config = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory())
+            var config = new ConfigurationBuilder().SetBasePath(Path.Join(Directory.GetCurrentDirectory(), "VolData"))
                 .AddJsonFile("config.json")
 #if DEBUG
                 .AddJsonFile("config.dev.json")

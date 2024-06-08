@@ -79,5 +79,5 @@
   },
   "TrimVocabularyCharacters":  ",.?!",
   "DiscordBaseUrl": "https://discordapp.com",
-  "SqliteDbLocation": "Database/results.db"
+  "SqliteDbLocation": "VolData/results.db"
 }
