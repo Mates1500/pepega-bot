@@ -2,7 +2,7 @@ FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0 as build
 ARG TARGETARCH
 COPY pepega-bot/* /pepega-bot/
 WORKDIR /pepega-bot
-RUN dotnet publish -a $TARGETARCH -c debug -o /app-build
+RUN dotnet publish -a $TARGETARCH -c release -o /app-build
 
 FROM mcr.microsoft.com/dotnet/runtime:8.0
 WORKDIR /app
