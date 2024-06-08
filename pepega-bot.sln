@@ -1,9 +1,9 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29215.179
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pepega-bot", "pepega-bot\pepega-bot.csproj", "{C47F231E-64EC-4DB5-B611-CD73504DC0EB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "pepega-bot", "pepega-bot\pepega-bot.csproj", "{C47F231E-64EC-4DB5-B611-CD73504DC0EB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
