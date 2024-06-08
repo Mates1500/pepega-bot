@@ -1,0 +1,4 @@
+services:
+  pepega-bot:
+    build: .
+    network_mode: "host"
