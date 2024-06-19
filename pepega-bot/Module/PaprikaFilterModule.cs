@@ -6,6 +6,7 @@ using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using pepega_bot.Services;
+using pepega_bot.Utils;
 
 namespace pepega_bot.Module
 {
@@ -61,7 +62,7 @@ namespace pepega_bot.Module
                 sb.Append(Environment.NewLine + $"{phrase.OriginalPhrase} -> {phrase.CorrectedPhrase}");
             }
 
-            await ((IUserMessage) message).AddReactionAsync(_linkRageEmote);
+            await ((IUserMessage)message).AddReactionAsyncFixed(_linkRageEmote);
         }
 
         private RepairedMessage RepairMessage(string content)

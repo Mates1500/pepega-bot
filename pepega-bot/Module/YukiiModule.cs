@@ -10,6 +10,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using pepega_bot.Database;
 using pepega_bot.Services;
+using pepega_bot.Utils;
 using Quartz;
 
 namespace pepega_bot.Module
@@ -145,7 +146,7 @@ namespace pepega_bot.Module
 
             if (_countToEmojiMappings.ContainsKey(matches.Count))
             {
-                await message.AddReactionAsync(_countToEmojiMappings[matches.Count]);
+                await ((IUserMessage)message).AddReactionAsyncFixed(_countToEmojiMappings[matches.Count]);
             }
         }
 

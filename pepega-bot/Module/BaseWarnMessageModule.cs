@@ -5,6 +5,7 @@ using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using pepega_bot.Services;
+using pepega_bot.Utils;
 
 namespace pepega_bot.Module
 {
@@ -54,7 +55,7 @@ namespace pepega_bot.Module
 
         private async Task PolitelyDeny(IUserMessage downloadedMessage)
         {
-            await downloadedMessage.AddReactionAsync(_fuckOffEmoji);
+            await downloadedMessage.AddReactionAsyncFixed(_fuckOffEmoji);
         }
 
         private bool AlreadyReacted(IUserMessage message)
